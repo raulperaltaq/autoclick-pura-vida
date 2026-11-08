@@ -1,13 +1,6 @@
 import { Link } from "@tanstack/react-router";
-import { BadgeCheck, MapPin } from "lucide-react";
-import { formatCRC, priceTag, type Listing } from "@/data/listings";
-
-export function PriceBadge({ listing }: { listing: Listing }) {
-  const t = priceTag(listing);
-  const cls =
-    t.tone === "good" ? "bg-primary text-primary-foreground" : t.tone === "high" ? "bg-muted text-muted-foreground" : "bg-secondary text-secondary-foreground";
-  return <span className={`rounded-full px-2.5 py-1 text-xs font-bold ${cls}`}>{t.label}</span>;
-}
+import { MapPin } from "lucide-react";
+import { formatCRC, type Listing } from "@/data/listings";
 
 export function ListingCard({ listing }: { listing: Listing }) {
   return (
@@ -27,14 +20,12 @@ export function ListingCard({ listing }: { listing: Listing }) {
           <h3 className="text-lg font-bold leading-tight">
             {listing.make} {listing.model}
           </h3>
-          {listing.verified && <BadgeCheck className="h-5 w-5 shrink-0 text-primary" aria-label="Vendedor verificado" />}
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
           {listing.year} · {listing.km.toLocaleString("es-CR")} km · {listing.transmission}
         </p>
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-3">
           <p className="font-display text-xl font-extrabold">{formatCRC(listing.price)}</p>
-          <PriceBadge listing={listing} />
         </div>
         <p className="mt-2 flex items-center gap-1 text-xs text-muted-foreground">
           <MapPin className="h-3.5 w-3.5" /> {listing.province}

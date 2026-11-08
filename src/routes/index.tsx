@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
-import { Search, ShieldCheck, Scale, MessageCircle, Sparkles } from "lucide-react";
+import { Search, Users, Phone, Sparkles } from "lucide-react";
 import hero from "@/assets/hero.jpg";
 import { listings } from "@/data/listings";
 import { ListingCard } from "@/components/listing-card";
@@ -9,18 +9,18 @@ export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
       { title: "autoclick.cr — Compra y vende vehículos en Costa Rica" },
-      { name: "description", content: "Encuentra tu próximo carro en Costa Rica: anuncios verificados, precio justo visible y contacto en un toque." },
+      { name: "description", content: "Encuentra tu próximo carro en Costa Rica con anuncios publicados directamente por sus vendedores." },
       { property: "og:title", content: "autoclick.cr — Vehículos en Costa Rica" },
-      { property: "og:description", content: "Anuncios verificados, precio justo y contacto por WhatsApp en un toque." },
+      { property: "og:description", content: "Anuncios publicados directamente por vendedores en Costa Rica." },
     ],
   }),
   component: Index,
 });
 
 const benefits = [
-  { icon: ShieldCheck, title: "Anuncios verificados", text: "Revisamos vendedores, VIN y fotos para frenar el fraude." },
-  { icon: Scale, title: "Precio justo visible", text: "Compará cada anuncio contra el precio de mercado." },
-  { icon: MessageCircle, title: "Contacto en un toque", text: "Chat, WhatsApp o llamada directa con el vendedor." },
+  { icon: Users, title: "Anuncios de la comunidad", text: "Cada vendedor publica y mantiene su propio anuncio." },
+  { icon: Phone, title: "Contacto directo", text: "Coordiná la visita directamente con quien publicó el vehículo." },
+  { icon: Search, title: "Elegí con información", text: "Revisá los detalles del anuncio antes de contactar al vendedor." },
 ];
 
 function Index() {
@@ -39,7 +39,7 @@ function Index() {
             Tu próximo carro, a un click.
           </h1>
           <p className="mt-4 max-w-lg text-lg text-ink-foreground/80">
-            Comprá o vendé tu vehículo en Costa Rica en minutos, con anuncios verificados.
+            Comprá o vendé tu vehículo en Costa Rica directamente entre personas.
           </p>
           <form
             onSubmit={(e) => {

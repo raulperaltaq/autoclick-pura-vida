@@ -83,7 +83,7 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1" },
       { title: "autoclick.cr — Compra y vende vehículos en Costa Rica" },
-      { name: "description", content: "Marketplace de vehículos en Costa Rica con anuncios verificados y precio justo." },
+      { name: "description", content: "Marketplace de vehículos en Costa Rica con anuncios publicados directamente por sus vendedores." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],

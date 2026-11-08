@@ -27,7 +27,7 @@ export function SiteFooter() {
       <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3">
         <div>
           <p className="font-display text-2xl font-extrabold">autoclick<span className="text-accent">.cr</span></p>
-          <p className="mt-2 text-sm opacity-70">Comprar o vender un vehículo en Costa Rica, en minutos y con confianza.</p>
+          <p className="mt-2 text-sm opacity-70">Comprar o vender un vehículo en Costa Rica, directamente entre personas.</p>
         </div>
         <div className="text-sm">
           <p className="font-semibold">Explorar</p>
