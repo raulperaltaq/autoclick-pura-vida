@@ -1,0 +1,43 @@
+import { Link } from "@tanstack/react-router";
+import { Plus } from "lucide-react";
+
+export function SiteHeader() {
+  return (
+    <header className="sticky top-0 z-40 border-b border-border bg-background/90 backdrop-blur">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+        <Link to="/" className="font-display text-2xl font-extrabold tracking-tight text-foreground">
+          autoclick<span className="text-accent">.cr</span>
+        </Link>
+        <nav className="flex items-center gap-1 text-sm font-semibold">
+          <Link to="/autos" className="rounded-full px-3 py-2 text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>
+            Comprar
+          </Link>
+          <Link to="/vender" className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90">
+            <Plus className="h-4 w-4" /> Vender
+          </Link>
+        </nav>
+      </div>
+    </header>
+  );
+}
+
+export function SiteFooter() {
+  return (
+    <footer className="mt-20 bg-ink text-ink-foreground">
+      <div className="mx-auto grid max-w-6xl gap-8 px-4 py-12 sm:grid-cols-3">
+        <div>
+          <p className="font-display text-2xl font-extrabold">autoclick<span className="text-accent">.cr</span></p>
+          <p className="mt-2 text-sm opacity-70">Comprar o vender un vehículo en Costa Rica, en minutos y con confianza.</p>
+        </div>
+        <div className="text-sm">
+          <p className="font-semibold">Explorar</p>
+          <ul className="mt-2 space-y-1 opacity-70">
+            <li><Link to="/autos">Vehículos en venta</Link></li>
+            <li><Link to="/vender">Publicar anuncio</Link></li>
+          </ul>
+        </div>
+        <p className="text-sm opacity-60 sm:text-right">© 2026 autoclick.cr · Hecho en Costa Rica</p>
+      </div>
+    </footer>
+  );
+}
