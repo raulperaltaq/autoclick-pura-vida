@@ -13,6 +13,7 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as VenderRouteImport } from './routes/vender'
 import { Route as AutosIndexRouteImport } from './routes/autos.index'
 import { Route as AutosIdRouteImport } from './routes/autos.$id'
+import { Route as AutosAvanzadaRouteImport } from './routes/autos.avanzada'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -34,17 +35,24 @@ const AutosIdRoute = AutosIdRouteImport.update({
   path: '/autos/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AutosAvanzadaRoute = AutosAvanzadaRouteImport.update({
+  id: '/autos/avanzada',
+  path: '/autos/avanzada',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/vender': typeof VenderRoute
   '/autos/$id': typeof AutosIdRoute
+  '/autos/avanzada': typeof AutosAvanzadaRoute
   '/autos/': typeof AutosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/vender': typeof VenderRoute
   '/autos/$id': typeof AutosIdRoute
+  '/autos/avanzada': typeof AutosAvanzadaRoute
   '/autos': typeof AutosIndexRoute
 }
 export interface FileRoutesById {
@@ -52,20 +60,23 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/vender': typeof VenderRoute
   '/autos/$id': typeof AutosIdRoute
+  '/autos/avanzada': typeof AutosAvanzadaRoute
   '/autos/': typeof AutosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/vender' | '/autos/$id' | '/autos/'
+  fullPaths: '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/vender' | '/autos/$id' | '/autos'
-  id: '__root__' | '/' | '/vender' | '/autos/$id' | '/autos/'
+  to: '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos'
+  id:
+    '__root__' | '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   VenderRoute: typeof VenderRoute
   AutosIdRoute: typeof AutosIdRoute
+  AutosAvanzadaRoute: typeof AutosAvanzadaRoute
   AutosIndexRoute: typeof AutosIndexRoute
 }
 
@@ -99,6 +110,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AutosIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/autos/avanzada': {
+      id: '/autos/avanzada'
+      path: '/autos/avanzada'
+      fullPath: '/autos/avanzada'
+      preLoaderRoute: typeof AutosAvanzadaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -106,6 +124,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   VenderRoute: VenderRoute,
   AutosIdRoute: AutosIdRoute,
+  AutosAvanzadaRoute: AutosAvanzadaRoute,
   AutosIndexRoute: AutosIndexRoute,
 }
 export const routeTree = rootRouteImport
