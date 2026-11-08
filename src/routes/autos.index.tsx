@@ -1,76 +1,47 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
-import { listings, provinces } from "@/data/listings";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { useMemo } from "react";
+import { listings } from "@/data/listings";
+import { applyFilters, brands, parseFilters } from "@/data/search-options";
 import { ListingCard } from "@/components/listing-card";
 
 export const Route = createFileRoute("/autos/")({
-  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s['q'] === "string" ? s['q'] : "" }),
+  validateSearch: parseFilters,
   head: () => ({
     meta: [
       { title: "Vehículos en venta en Costa Rica | autoclick.cr" },
-      { name: "description", content: "Explorá carros, SUVs y pickups usados en venta en todo Costa Rica con filtros por precio, provincia y más." },
+      { name: "description", content: "Explorá carros, SUVs y pickups en venta en todo Costa Rica con filtros por marca, año y condición." },
       { property: "og:title", content: "Vehículos en venta | autoclick.cr" },
       { property: "og:description", content: "Carros, SUVs y pickups en venta en Costa Rica." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AutosPage,
 });
 
-const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
-
 function AutosPage() {
-  const { q } = Route.useSearch();
+  const search = Route.useSearch();
   const navigate = useNavigate({ from: "/autos/" });
-  const [province, setProvince] = useState("");
-  const [body, setBody] = useState("");
-  const [max, setMax] = useState(0);
-  const [sort, setSort] = useState("recent");
-
-  const results = useMemo(() => {
-    const words = norm(q).split(/\s+/).filter((w) => w.length > 1 && !["en", "de", "con", "un", "una"].includes(w));
-    let r = listings.filter((l) => {
-      const hay = norm(`${l.make} ${l.model} ${l.year} ${l.fuel} ${l.body} ${l.province} ${l.transmission}`);
-      return words.every((w) => hay.includes(w));
-    });
-    if (province) r = r.filter((l) => l.province === province);
-    if (body) r = r.filter((l) => l.body === body);
-    if (max) r = r.filter((l) => l.price <= max);
-    if (sort === "low") r = [...r].sort((a, b) => a.price - b.price);
-    if (sort === "high") r = [...r].sort((a, b) => b.price - a.price);
-    return [...r].sort((a, b) => Number(b.featured) - Number(a.featured));
-  }, [q, province, body, max, sort]);
-
-  const select = "rounded-full border border-input bg-card px-4 py-2 text-sm font-medium";
+  const set = (k: string, v: string) => navigate({ search: (p) => ({ ...p, [k]: v || undefined }), replace: true });
+  const results = useMemo(() => applyFilters(listings, search), [search]);
+  const field = "rounded-full border border-input bg-card px-4 py-2 text-sm font-medium outline-none focus:ring-2 focus:ring-ring";
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-10">
       <h1 className="text-4xl font-extrabold">Vehículos en venta</h1>
       <div className="mt-6 flex flex-wrap gap-2">
-        <input
-          value={q}
-          onChange={(e) => navigate({ search: { q: e.target.value }, replace: true })}
-          placeholder="Marca, modelo o frase…"
-          className="min-w-56 flex-1 rounded-full border border-input bg-card px-4 py-2 text-sm outline-none focus:ring-2 focus:ring-ring"
-        />
-        <select className={select} value={province} onChange={(e) => setProvince(e.target.value)}>
-          <option value="">Toda Costa Rica</option>
-          {provinces.map((p) => <option key={p}>{p}</option>)}
+        <input value={search.q ?? ""} onChange={(e) => set("q", e.target.value)} placeholder="Marca, modelo o frase…" className={`min-w-56 flex-1 ${field}`} />
+        <select aria-label="Marca" className={field} value={search.make ?? ""} onChange={(e) => set("make", e.target.value)}>
+          <option value="">Marca</option>
+          {brands.map((b) => <option key={b}>{b}</option>)}
         </select>
-        <select className={select} value={body} onChange={(e) => setBody(e.target.value)}>
-          <option value="">Todo tipo</option>
-          {["SUV", "Pickup", "Sedán", "Hatchback"].map((b) => <option key={b}>{b}</option>)}
+        <input aria-label="Año desde" type="number" min={1950} max={new Date().getFullYear() + 1} placeholder="Año (desde 1950)" value={search.year ?? ""} onChange={(e) => set("year", e.target.value)} className={`w-44 ${field}`} />
+        <select aria-label="Condición" className={field} value={search.condition ?? ""} onChange={(e) => set("condition", e.target.value)}>
+          <option value="">Condición</option>
+          <option>Nuevo</option>
+          <option>Usado</option>
         </select>
-        <select className={select} value={max} onChange={(e) => setMax(Number(e.target.value))}>
-          <option value={0}>Cualquier precio</option>
-          <option value={15000000}>Hasta ₡15M</option>
-          <option value={20000000}>Hasta ₡20M</option>
-          <option value={25000000}>Hasta ₡25M</option>
-        </select>
-        <select className={select} value={sort} onChange={(e) => setSort(e.target.value)}>
-          <option value="recent">Más recientes</option>
-          <option value="low">Menor precio</option>
-          <option value="high">Mayor precio</option>
-        </select>
+        <Link to="/autos/avanzada" search={search} className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground">Búsqueda avanzada</Link>
       </div>
       <p className="mt-4 text-sm text-muted-foreground">{results.length} resultados</p>
       {results.length ? (
