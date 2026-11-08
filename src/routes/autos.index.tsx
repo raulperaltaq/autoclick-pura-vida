@@ -4,7 +4,7 @@ import { listings, provinces } from "@/data/listings";
 import { ListingCard } from "@/components/listing-card";
 
 export const Route = createFileRoute("/autos/")({
-  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s.q === "string" ? s.q : "" }),
+  validateSearch: (s: Record<string, unknown>) => ({ q: typeof s['q'] === "string" ? s['q'] : "" }),
   head: () => ({
     meta: [
       { title: "Vehículos en venta en Costa Rica | autoclick.cr" },
