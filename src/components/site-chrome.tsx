@@ -9,7 +9,7 @@ export function SiteHeader() {
           autoclick<span className="text-accent">.cr</span>
         </Link>
         <nav className="flex items-center gap-1 text-sm font-semibold">
-          <Link to="/autos" className="rounded-full px-3 py-2 text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>
+          <Link to="/autos" search={{ q: "" }} className="rounded-full px-3 py-2 text-muted-foreground hover:text-foreground" activeProps={{ className: "text-foreground" }}>
             Comprar
           </Link>
           <Link to="/vender" className="inline-flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-primary-foreground hover:bg-primary/90">
@@ -32,7 +32,7 @@ export function SiteFooter() {
         <div className="text-sm">
           <p className="font-semibold">Explorar</p>
           <ul className="mt-2 space-y-1 opacity-70">
-            <li><Link to="/autos">Vehículos en venta</Link></li>
+            <li><Link to="/autos" search={{ q: "" }}>Vehículos en venta</Link></li>
             <li><Link to="/vender">Publicar anuncio</Link></li>
           </ul>
         </div>
