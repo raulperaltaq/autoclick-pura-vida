@@ -69,16 +69,21 @@ function Vender() {
         <Field label="Kilometraje">
           <input type="number" min={0} placeholder="Kilometraje" className={field} />
         </Field>
-        <Field label="Precio" required>
+        <Field label="Precio" required className="sm:col-span-2">
           <div className="flex gap-2">
             <input required type="number" min={0} step="0.01" placeholder="Precio" className={`${field} min-w-0 flex-1`} />
-            <select required aria-label="Moneda del precio" className={`${field} w-36`} defaultValue="CRC">
+            <select
+              required
+              aria-label="Moneda del precio"
+              className="w-36 shrink-0 rounded-xl border border-input bg-card px-3 py-3 text-sm outline-none focus:ring-2 focus:ring-ring"
+              defaultValue="CRC"
+            >
               <option value="CRC">Colones (₡)</option>
               <option value="USD">Dólares (US$)</option>
             </select>
           </div>
         </Field>
-        <Field label="Provincia">
+        <Field label="Provincia" className="sm:col-span-2">
           <select className={field} defaultValue="">
             <option value="">Provincia</option>
             {provinces.map((p) => <option key={p}>{p}</option>)}
@@ -99,13 +104,13 @@ function Vender() {
           <span className="font-semibold text-foreground">
             Fotos del vehículo<RequiredMark />
           </span>
-          <span>Seleccioná entre 2 y 20 fotos.</span>
+          <span>Seleccioná entre 2 y 4 fotos para un anuncio gratuito.</span>
           <input
             required
             type="file"
             accept="image/*"
             multiple
-            aria-label="Fotos del vehículo (obligatorio, mínimo 2)"
+            aria-label="Fotos del vehículo (obligatorio, entre 2 y 4 para anuncios gratuitos)"
             aria-describedby="photo-requirements"
             className="block w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-secondary file:px-4 file:py-2 file:font-semibold file:text-secondary-foreground"
             onChange={(event) => {
@@ -114,8 +119,8 @@ function Vender() {
               event.currentTarget.setCustomValidity(
                 count === 1
                   ? "Seleccioná al menos 2 fotos."
-                  : count > 20
-                    ? "Podés seleccionar un máximo de 20 fotos."
+                  : count > 4
+                    ? "Para un anuncio gratuito, podés seleccionar un máximo de 4 fotos."
                     : "",
               );
             }}
