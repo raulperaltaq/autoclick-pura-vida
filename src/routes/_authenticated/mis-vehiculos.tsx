@@ -1,0 +1,6 @@
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { Car, Plus } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { accountHead } from "@/lib/account";
+export const Route = createFileRoute("/_authenticated/mis-vehiculos")({head:()=>accountHead("Mis vehículos", "Tu cuenta particular y tus anuncios en autoclick.cr."), component: MyVehicles});
+function MyVehicles(){return <main className="mx-auto max-w-6xl px-4 py-12"><p className="text-sm text-primary font-semibold">Mi cuenta · Particular</p><div className="mt-2 flex flex-wrap items-center justify-between gap-4"><h1 className="text-3xl font-extrabold">Mis vehículos</h1><Button asChild><Link to="/vender"><Plus />Publicar vehículo</Link></Button></div><div className="py-20 text-center"><Car className="mx-auto h-12 w-12 text-muted-foreground"/><h2 className="mt-4 text-xl font-bold">Todavía no tenés anuncios</h2><p className="mt-2 text-sm text-muted-foreground">La publicación de vehículos todavía no está habilitada.</p></div></main>;}

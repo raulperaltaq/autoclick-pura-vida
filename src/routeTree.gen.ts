@@ -10,7 +10,12 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
+import { Route as AuthRouteImport } from './routes/auth'
+import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as VenderRouteImport } from './routes/vender'
+import { Route as AuthenticatedFavoritosRouteImport } from './routes/_authenticated/favoritos'
+import { Route as AuthenticatedMisVehiculosRouteImport } from './routes/_authenticated/mis-vehiculos'
 import { Route as AutosIndexRouteImport } from './routes/autos.index'
 import { Route as AutosIdRouteImport } from './routes/autos.$id'
 import { Route as AutosAvanzadaRouteImport } from './routes/autos.avanzada'
@@ -20,11 +25,36 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
+  id: '/_authenticated',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ResetPasswordRoute = ResetPasswordRouteImport.update({
+  id: '/reset-password',
+  path: '/reset-password',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VenderRoute = VenderRouteImport.update({
   id: '/vender',
   path: '/vender',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AuthenticatedFavoritosRoute = AuthenticatedFavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => AuthenticatedRouteRoute,
+} as any)
+const AuthenticatedMisVehiculosRoute =
+  AuthenticatedMisVehiculosRouteImport.update({
+    id: '/mis-vehiculos',
+    path: '/mis-vehiculos',
+    getParentRoute: () => AuthenticatedRouteRoute,
+  } as any)
 const AutosIndexRoute = AutosIndexRouteImport.update({
   id: '/autos/',
   path: '/autos/',
@@ -43,14 +73,22 @@ const AutosAvanzadaRoute = AutosAvanzadaRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/vender': typeof VenderRoute
+  '/favoritos': typeof AuthenticatedFavoritosRoute
+  '/mis-vehiculos': typeof AuthenticatedMisVehiculosRoute
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
   '/autos/': typeof AutosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/vender': typeof VenderRoute
+  '/favoritos': typeof AuthenticatedFavoritosRoute
+  '/mis-vehiculos': typeof AuthenticatedMisVehiculosRoute
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
   '/autos': typeof AutosIndexRoute
@@ -58,22 +96,58 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/auth': typeof AuthRoute
+  '/reset-password': typeof ResetPasswordRoute
   '/vender': typeof VenderRoute
+  '/_authenticated/favoritos': typeof AuthenticatedFavoritosRoute
+  '/_authenticated/mis-vehiculos': typeof AuthenticatedMisVehiculosRoute
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
   '/autos/': typeof AutosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos/'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/vender'
+    | '/favoritos'
+    | '/mis-vehiculos'
+    | '/autos/$id'
+    | '/autos/avanzada'
+    | '/autos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos'
+  to:
+    | '/'
+    | '/auth'
+    | '/reset-password'
+    | '/vender'
+    | '/favoritos'
+    | '/mis-vehiculos'
+    | '/autos/$id'
+    | '/autos/avanzada'
+    | '/autos'
   id:
-    '__root__' | '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos/'
+    | '__root__'
+    | '/'
+    | '/_authenticated'
+    | '/auth'
+    | '/reset-password'
+    | '/vender'
+    | '/_authenticated/favoritos'
+    | '/_authenticated/mis-vehiculos'
+    | '/autos/$id'
+    | '/autos/avanzada'
+    | '/autos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AuthRoute: typeof AuthRoute
+  ResetPasswordRoute: typeof ResetPasswordRoute
   VenderRoute: typeof VenderRoute
   AutosIdRoute: typeof AutosIdRoute
   AutosAvanzadaRoute: typeof AutosAvanzadaRoute
@@ -89,12 +163,47 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/_authenticated': {
+      id: '/_authenticated'
+      path: ''
+      fullPath: '/'
+      preLoaderRoute: typeof AuthenticatedRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reset-password': {
+      id: '/reset-password'
+      path: '/reset-password'
+      fullPath: '/reset-password'
+      preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/vender': {
       id: '/vender'
       path: '/vender'
       fullPath: '/vender'
       preLoaderRoute: typeof VenderRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/_authenticated/favoritos': {
+      id: '/_authenticated/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof AuthenticatedFavoritosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
+    }
+    '/_authenticated/mis-vehiculos': {
+      id: '/_authenticated/mis-vehiculos'
+      path: '/mis-vehiculos'
+      fullPath: '/mis-vehiculos'
+      preLoaderRoute: typeof AuthenticatedMisVehiculosRouteImport
+      parentRoute: typeof AuthenticatedRouteRoute
     }
     '/autos/': {
       id: '/autos/'
@@ -120,8 +229,24 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AuthenticatedRouteRouteChildren {
+  AuthenticatedFavoritosRoute: typeof AuthenticatedFavoritosRoute
+  AuthenticatedMisVehiculosRoute: typeof AuthenticatedMisVehiculosRoute
+}
+
+const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
+  AuthenticatedFavoritosRoute: AuthenticatedFavoritosRoute,
+  AuthenticatedMisVehiculosRoute: AuthenticatedMisVehiculosRoute,
+}
+
+const AuthenticatedRouteRouteWithChildren =
+  AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AuthRoute: AuthRoute,
+  ResetPasswordRoute: ResetPasswordRoute,
   VenderRoute: VenderRoute,
   AutosIdRoute: AutosIdRoute,
   AutosAvanzadaRoute: AutosAvanzadaRoute,
