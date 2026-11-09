@@ -1,6 +1,8 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
-import { MapPin, Phone } from "lucide-react";
+import { MapPin, MessageCircle, Share2 } from "lucide-react";
+import { useState } from "react";
 import { formatCRC, listings } from "@/data/listings";
+import { ListingFavoriteButton } from "@/components/listing-favorite-button";
 
 export const Route = createFileRoute("/autos/$id")({
   loader: ({ params }) => {
@@ -25,6 +27,7 @@ export const Route = createFileRoute("/autos/$id")({
 
 function Detail() {
   const { listing: l } = Route.useLoaderData();
+  const [shareStatus, setShareStatus] = useState("");
   const specs = [
     ["Año", l.year],
     ["Kilometraje", `${l.km.toLocaleString("es-CR")} km`],
@@ -33,12 +36,45 @@ function Detail() {
     ["Carrocería", l.body],
     ["Provincia", l.province],
   ];
+  const phone = l.phone.replace(/\D/g, "");
+  const whatsappNumber = phone.startsWith("506") ? phone : `506${phone}`;
+  const whatsappMessage = encodeURIComponent(
+    `Hola, me interesa el ${l.make} ${l.model} ${l.year} publicado en autoclick.cr.`,
+  );
+
+  const shareListing = async () => {
+    setShareStatus("");
+    const shareData = {
+      title: `${l.make} ${l.model} ${l.year} | autoclick.cr`,
+      text: `Mirá este vehículo: ${l.make} ${l.model} ${l.year} por ${formatCRC(l.price)}.`,
+      url: window.location.href,
+    };
+
+    try {
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else if (navigator.clipboard) {
+        await navigator.clipboard.writeText(shareData.url);
+        setShareStatus("Enlace copiado.");
+      } else {
+        setShareStatus("Tu navegador no permite compartir ni copiar el enlace.");
+      }
+    } catch (error) {
+      if (error instanceof DOMException && error.name === "AbortError") return;
+      console.error("Could not share vehicle listing:", error);
+      setShareStatus("No se pudo compartir el anuncio. Intentá nuevamente.");
+    }
+  };
+
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <Link to="/autos" search={{ q: "" }} className="text-sm font-semibold text-muted-foreground hover:text-foreground">← Volver a resultados</Link>
       <div className="mt-4 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <div>
-          <img src={l.image} alt={`${l.make} ${l.model}`} width={1024} height={768} className="w-full rounded-3xl object-cover" />
+          <div className="relative">
+            <img src={l.image} alt={`${l.make} ${l.model}`} width={1024} height={768} className="w-full rounded-3xl object-cover" />
+            <ListingFavoriteButton listingId={l.id} />
+          </div>
           <h2 className="mt-8 text-2xl font-bold">Descripción</h2>
           <p className="mt-2 text-muted-foreground">{l.description}</p>
           <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
@@ -56,14 +92,27 @@ function Detail() {
             <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4" /> {l.province}</p>
             <p className="mt-4 font-display text-4xl font-extrabold">{formatCRC(l.price)}</p>
             <div className="mt-6 grid gap-2">
-              <a href={`tel:+${l.phone}`} className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-5 py-3 font-bold hover:bg-muted">
-                <Phone className="h-5 w-5" /> Llamar
+              <a
+                href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
+                target="_blank"
+                rel="noreferrer"
+                className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 font-bold text-primary-foreground hover:bg-primary/90"
+              >
+                <MessageCircle className="h-5 w-5" /> Contactar por WhatsApp
               </a>
+              <button
+                type="button"
+                onClick={() => void shareListing()}
+                className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-5 py-3 font-bold hover:bg-muted"
+              >
+                <Share2 className="h-5 w-5" /> Compartir anuncio
+              </button>
+              {shareStatus && <p role="status" className="text-center text-sm text-muted-foreground">{shareStatus}</p>}
             </div>
           </div>
           <div className="rounded-3xl bg-secondary p-6">
             <p className="font-bold">{l.seller}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Publicación directa entre personas. Verificá la información y el estado del vehículo antes de comprar.</p>
+            <p className="mt-1 text-sm text-muted-foreground">Publicación directa entre personas. No necesitas crear una cuenta. Verificá la información y el estado del vehículo antes de comprar.</p>
           </div>
         </aside>
       </div>

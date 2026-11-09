@@ -39,7 +39,7 @@ function Index() {
             Tu próximo carro, a un click.
           </h1>
           <p className="mt-4 max-w-lg text-lg text-ink-foreground/80">
-            Comprá o vendé tu vehículo en Costa Rica directamente entre personas.
+            Comprá o vendé tu vehículo en Costa Rica directamente entre personas. No necesitas crear una cuenta.
           </p>
           <form
             onSubmit={(e) => {

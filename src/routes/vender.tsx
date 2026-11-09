@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, ReactNode } from "react";
 import { provinces } from "@/data/listings";
@@ -15,6 +15,7 @@ import {
 } from "@/data/monetization";
 import type { AddOnId, ListingPlanId } from "@/data/monetization";
 import { styles } from "@/data/search-options";
+import { useAuth } from "@/lib/use-auth";
 
 export const Route = createFileRoute("/vender")({
   head: () => ({
@@ -178,6 +179,14 @@ function CheckOption({
 }
 
 function Vender() {
+  const {
+    user,
+    profile,
+    isLoading: isAuthLoading,
+    profileError,
+    refreshProfile,
+    signOut,
+  } = useAuth();
   const [activeAudience, setActiveAudience] = useState<"individual" | "agency">("individual");
   const [selectedPlan, setSelectedPlan] = useState<ListingPlanId>("free");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
@@ -185,11 +194,11 @@ function Vender() {
   const [selectedServices, setSelectedServices] = useState<AddOnId[]>([]);
   const [selectedAgencyPlan, setSelectedAgencyPlan] = useState<(typeof agencyPlans)[number]["id"] | null>(null);
   const [agencyActionNotice, setAgencyActionNotice] = useState("");
+  const [agencyAuthError, setAgencyAuthError] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoError, setPhotoError] = useState("");
   const [mainPhoto, setMainPhoto] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
-  const isAuthenticated = false;
   const hasExtraPhotos = selectedServices.includes("extra-photos");
   const photoLimit = getPhotoLimit(selectedPlan, hasExtraPhotos);
   const estimate = calculateListingEstimate({
@@ -209,6 +218,16 @@ function Vender() {
     () => photos.map((file) => ({ file, url: URL.createObjectURL(file) })),
     [photos],
   );
+
+  const handleAgencySignOut = async () => {
+    try {
+      await signOut();
+      setAgencyAuthError("");
+    } catch (error) {
+      console.error("Could not sign out before switching to an agency account:", error);
+      setAgencyAuthError("No se pudo cerrar la sesión. Intentá nuevamente.");
+    }
+  };
 
   useEffect(() => () => photoPreviews.forEach(({ url }) => URL.revokeObjectURL(url)), [photoPreviews]);
   useEffect(() => {
@@ -441,7 +460,22 @@ function Vender() {
                   </div>
                 </Section>
                 <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
-                  {isAuthenticated ? (
+                  {isAuthLoading ? (
+                    <p role="status" className="text-sm text-muted-foreground">Verificando sesión…</p>
+                  ) : user && !profile ? (
+                    <div className="text-center">
+                      <p role="alert" className="text-sm text-destructive">
+                        {profileError ?? "No se pudo cargar el perfil de tu cuenta."}
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => void refreshProfile()}
+                        className="mt-2 font-semibold text-primary hover:underline"
+                      >
+                        Reintentar
+                      </button>
+                    </div>
+                  ) : profile?.role === "agency" ? (
                     <button
                       type="button"
                       disabled={!selectedAgencyPlan}
@@ -450,22 +484,40 @@ function Vender() {
                     >
                       Proceder al pago
                     </button>
-                  ) : (
-                    <>
+                  ) : user ? (
+                    <div className="text-center">
+                      <p className="text-sm text-muted-foreground">
+                        Los planes requieren una cuenta de agencia. Cerrá sesión para acceder o crear una.
+                      </p>
                       <button
                         type="button"
-                        onClick={() => setAgencyActionNotice("El registro estará disponible cuando se habilite la autenticación.")}
+                        onClick={() => void handleAgencySignOut()}
+                        className="mt-3 rounded-full border border-border px-6 py-3 font-bold transition hover:bg-muted"
+                      >
+                        Cerrar sesión
+                      </button>
+                      {agencyAuthError && (
+                        <p role="alert" className="mt-2 text-sm text-destructive">
+                          {agencyAuthError}
+                        </p>
+                      )}
+                    </div>
+                  ) : (
+                    <>
+                      <Link
+                        to="/acceder"
+                        search={{ mode: "signup", role: "agency" }}
                         className="rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90"
                       >
                         Crear cuenta
-                      </button>
-                      <button
-                        type="button"
-                        onClick={() => setAgencyActionNotice("El inicio de sesión estará disponible cuando se habilite la autenticación.")}
+                      </Link>
+                      <Link
+                        to="/acceder"
+                        search={{ mode: "login", role: "agency" }}
                         className="rounded-full border border-border bg-transparent px-6 py-3 font-bold text-foreground transition hover:bg-muted"
                       >
                         Login
-                      </button>
+                      </Link>
                     </>
                   )}
                 </div>
@@ -480,11 +532,17 @@ function Vender() {
         </div>
       </section>
 
-      {activeAudience === "individual" && (
+      {activeAudience === "individual" && isAuthLoading ? (
+        <p role="status" className="rounded-xl bg-muted p-4 text-center text-sm text-muted-foreground">
+          Verificando sesión…
+        </p>
+      ) : activeAudience === "individual" && (!user || profile?.role !== "agency") ? (
       <form onSubmit={(event) => event.preventDefault()} className="space-y-6">
         <p role="status" className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
           La publicación gratuita requiere aprobación y puede tardar entre 1 y 2 horas. El formulario
-          y la publicación estarán disponibles cuando se active el almacenamiento compartido.
+          y la publicación estarán disponibles cuando se active el almacenamiento compartido. No necesitás
+          registrarte ni iniciar sesión para publicar; necesitás una cuenta para editar tus anuncios o guardar
+          favoritos.
         </p>
         <Section
           title="Impulsa tu anuncio"
@@ -945,7 +1003,20 @@ function Vender() {
           Publicar anuncio (próximamente)
         </button>
       </form>
-      )}
+      ) : activeAudience === "individual" ? (
+        <section className="rounded-2xl border border-border bg-card p-6 text-center shadow-sm sm:p-8">
+          <h2 className="text-2xl font-bold">Panel de agencia</h2>
+          <p className="mt-2 text-muted-foreground">
+            La publicación de vehículos para agencias se administra desde tu panel.
+          </p>
+          <Link
+            to="/dashboard/agencia"
+            className="mt-5 inline-flex rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground"
+          >
+            Ir al Panel Agencia
+          </Link>
+        </section>
+      ) : null}
     </main>
   );
 }

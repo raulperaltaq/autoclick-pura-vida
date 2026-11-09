@@ -10,14 +10,33 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AccederRouteImport } from './routes/acceder'
+import { Route as FavoritosRouteImport } from './routes/favoritos'
+import { Route as MiCuentaRouteImport } from './routes/mi-cuenta'
 import { Route as VenderRouteImport } from './routes/vender'
 import { Route as AutosIndexRouteImport } from './routes/autos.index'
 import { Route as AutosIdRouteImport } from './routes/autos.$id'
 import { Route as AutosAvanzadaRouteImport } from './routes/autos.avanzada'
+import { Route as DashboardAgenciaRouteImport } from './routes/dashboard.agencia'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AccederRoute = AccederRouteImport.update({
+  id: '/acceder',
+  path: '/acceder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavoritosRoute = FavoritosRouteImport.update({
+  id: '/favoritos',
+  path: '/favoritos',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MiCuentaRoute = MiCuentaRouteImport.update({
+  id: '/mi-cuenta',
+  path: '/mi-cuenta',
   getParentRoute: () => rootRouteImport,
 } as any)
 const VenderRoute = VenderRouteImport.update({
@@ -40,43 +59,91 @@ const AutosAvanzadaRoute = AutosAvanzadaRouteImport.update({
   path: '/autos/avanzada',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DashboardAgenciaRoute = DashboardAgenciaRouteImport.update({
+  id: '/dashboard/agencia',
+  path: '/dashboard/agencia',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/acceder': typeof AccederRoute
+  '/favoritos': typeof FavoritosRoute
+  '/mi-cuenta': typeof MiCuentaRoute
   '/vender': typeof VenderRoute
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
+  '/dashboard/agencia': typeof DashboardAgenciaRoute
   '/autos/': typeof AutosIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/acceder': typeof AccederRoute
+  '/favoritos': typeof FavoritosRoute
+  '/mi-cuenta': typeof MiCuentaRoute
   '/vender': typeof VenderRoute
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
+  '/dashboard/agencia': typeof DashboardAgenciaRoute
   '/autos': typeof AutosIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/acceder': typeof AccederRoute
+  '/favoritos': typeof FavoritosRoute
+  '/mi-cuenta': typeof MiCuentaRoute
   '/vender': typeof VenderRoute
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
+  '/dashboard/agencia': typeof DashboardAgenciaRoute
   '/autos/': typeof AutosIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos/'
+  fullPaths:
+    | '/'
+    | '/acceder'
+    | '/favoritos'
+    | '/mi-cuenta'
+    | '/vender'
+    | '/autos/$id'
+    | '/autos/avanzada'
+    | '/dashboard/agencia'
+    | '/autos/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos'
+  to:
+    | '/'
+    | '/acceder'
+    | '/favoritos'
+    | '/mi-cuenta'
+    | '/vender'
+    | '/autos/$id'
+    | '/autos/avanzada'
+    | '/dashboard/agencia'
+    | '/autos'
   id:
-    '__root__' | '/' | '/vender' | '/autos/$id' | '/autos/avanzada' | '/autos/'
+    | '__root__'
+    | '/'
+    | '/acceder'
+    | '/favoritos'
+    | '/mi-cuenta'
+    | '/vender'
+    | '/autos/$id'
+    | '/autos/avanzada'
+    | '/dashboard/agencia'
+    | '/autos/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AccederRoute: typeof AccederRoute
+  FavoritosRoute: typeof FavoritosRoute
+  MiCuentaRoute: typeof MiCuentaRoute
   VenderRoute: typeof VenderRoute
   AutosIdRoute: typeof AutosIdRoute
   AutosAvanzadaRoute: typeof AutosAvanzadaRoute
+  DashboardAgenciaRoute: typeof DashboardAgenciaRoute
   AutosIndexRoute: typeof AutosIndexRoute
 }
 
@@ -87,6 +154,27 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/acceder': {
+      id: '/acceder'
+      path: '/acceder'
+      fullPath: '/acceder'
+      preLoaderRoute: typeof AccederRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoritos': {
+      id: '/favoritos'
+      path: '/favoritos'
+      fullPath: '/favoritos'
+      preLoaderRoute: typeof FavoritosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/mi-cuenta': {
+      id: '/mi-cuenta'
+      path: '/mi-cuenta'
+      fullPath: '/mi-cuenta'
+      preLoaderRoute: typeof MiCuentaRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vender': {
@@ -117,14 +205,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AutosAvanzadaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/dashboard/agencia': {
+      id: '/dashboard/agencia'
+      path: '/dashboard/agencia'
+      fullPath: '/dashboard/agencia'
+      preLoaderRoute: typeof DashboardAgenciaRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AccederRoute: AccederRoute,
+  FavoritosRoute: FavoritosRoute,
+  MiCuentaRoute: MiCuentaRoute,
   VenderRoute: VenderRoute,
   AutosIdRoute: AutosIdRoute,
   AutosAvanzadaRoute: AutosAvanzadaRoute,
+  DashboardAgenciaRoute: DashboardAgenciaRoute,
   AutosIndexRoute: AutosIndexRoute,
 }
 export const routeTree = rootRouteImport
