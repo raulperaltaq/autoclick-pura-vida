@@ -61,7 +61,7 @@ function AdvancedPage() {
         </Field>
         {sel("sort", "Ordenar por", [["price", "Precio"], ["year", "Año"], ["make", "Marca"], ["model", "Modelo"]])}
         {sel("condition", "Mostrar", [["Usado", "Solo usados"], ["", "Nuevos y usados"]])}
-        <button className="rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground sm:col-span-2">Buscar</button>
+        <button type="submit" className="rounded-full bg-primary px-6 py-3 font-semibold text-primary-foreground sm:col-span-2">Buscar</button>
       </form>
     </main>
   );

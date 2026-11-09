@@ -55,7 +55,7 @@ function Index() {
               placeholder="Ej: Toyota híbrido en San José"
               className="min-w-0 flex-1 bg-transparent py-2 text-foreground outline-none placeholder:text-muted-foreground"
             />
-            <button className="rounded-full bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:bg-primary/90">Buscar</button>
+            <button type="submit" className="rounded-full bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:bg-primary/90">Buscar</button>
           </form>
         </div>
       </section>
