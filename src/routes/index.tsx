@@ -2,7 +2,8 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Search, Users, Phone, Sparkles } from "lucide-react";
 import hero from "@/assets/hero.jpg";
-import { listings } from "@/data/listings";
+import { listings, sortListingsByPlanPriority } from "@/data/listings";
+import { brands, styles } from "@/data/search-options";
 import { ListingCard } from "@/components/listing-card";
 
 export const Route = createFileRoute("/")({
@@ -26,6 +27,15 @@ const benefits = [
 function Index() {
   const [q, setQ] = useState("");
   const navigate = useNavigate();
+  const featuredListings = sortListingsByPlanPriority(listings);
+  const latestListings = listings.slice().reverse().slice(0, 3);
+  const displayedListingIds = new Set([
+    ...featuredListings.map((listing) => listing.id),
+    ...latestListings.map((listing) => listing.id),
+  ]);
+  const recommendedListings = listings
+    .filter((listing) => listing.plan === "free" && !displayedListingIds.has(listing.id))
+    .slice(0, 3);
   return (
     <main>
       <section className="relative isolate overflow-hidden">
@@ -66,10 +76,69 @@ function Index() {
           <Link to="/autos" search={{ q: "" }} className="text-sm font-semibold text-primary">Ver todos →</Link>
         </div>
         <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {listings.slice(0, 3).map((l) => (
+          {featuredListings.map((l) => (
             <ListingCard key={l.id} listing={l} />
           ))}
         </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <div className="flex items-end justify-between">
+          <h2 className="text-3xl font-extrabold sm:text-4xl">Últimos vehículos publicados</h2>
+          <Link to="/autos" search={{ q: "" }} className="text-sm font-semibold text-primary">Ver todos →</Link>
+        </div>
+        <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {latestListings.map((listing) => (
+            <ListingCard key={listing.id} listing={listing} />
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <h2 className="text-3xl font-extrabold sm:text-4xl">Buscar autos por estilo</h2>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {styles.map((style) => (
+            <Link
+              key={style}
+              to="/autos"
+              search={{ style }}
+              className="rounded-2xl border border-border bg-card p-5 transition hover:border-primary hover:shadow-card"
+            >
+              <span className="font-bold">{style}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <h2 className="text-3xl font-extrabold sm:text-4xl">Buscar autos por marca</h2>
+        <div className="mt-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {brands.map((make) => (
+            <Link
+              key={make}
+              to="/autos"
+              search={{ make }}
+              className="rounded-2xl border border-border bg-card p-5 transition hover:border-primary hover:shadow-card"
+            >
+              <span className="font-bold">{make}</span>
+            </Link>
+          ))}
+        </div>
+      </section>
+
+      <section className="mx-auto max-w-6xl px-4 pb-16">
+        <h2 className="text-3xl font-extrabold sm:text-4xl">Otros autos que te podrían interesar</h2>
+        {recommendedListings.length > 0 ? (
+          <div className="mt-8 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {recommendedListings.map((listing) => (
+              <ListingCard key={listing.id} listing={listing} />
+            ))}
+          </div>
+        ) : (
+          <p className="mt-4 text-muted-foreground">
+            Explorá todos los vehículos publicados para encontrar más opciones.
+          </p>
+        )}
       </section>
 
       <section className="mx-auto max-w-6xl px-4">

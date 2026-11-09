@@ -1,4 +1,4 @@
-import type { Listing } from "@/data/listings";
+import { sortListingsByPlanPriority, type Listing } from "@/data/listings";
 
 export const brands = "Acura|Aion|Alfa Romeo|AMC|Aro|Asia|Aston Martin|Audi|Austin|BAIC|Baw|Bentley|Bluebird|BMW|Brilliance|Buick|BYD|Cadillac|Chana|Changan|Chery|Chevrolet|Chrysler|Citroen|CMC|Dacia|Daewoo|Daihatsu|Datsun|Dodge/RAM|Donfeng (ZNA)|Eagle|Faw|Ferrari|Fiat|Ford|Foton|Freightliner|Geely|Genesis|Geo|GMC|Gonow|Great Wall|Hafei|Haima|Haval|Heibao|Higer|Hino|Honda|Hummer|Hycan|Hyundai|Infiniti|International|Isuzu|Iveco|JAC|Jaecoo|Jaguar|Jeep|Jetour|Jinbei|JMC|Jonway|Kaiyi|Kenworth|Kia|Lada|Lamborghini|Lancia|Land Rover|Lexus|Lifan|Lincoln|Lotus|Mack|Magiruz|Mahindra|Marcopolo|Maserati|Maxus|Mazda|Mercedes Benz|Mercury|MG|Mini|Mitsubishi|Neta|Nissan|Oldsmobile|Omoda|Opel|Peterbilt|Peugeot|Piaggio|Plymouth|Polarsun|Pontiac|Porsche|Proton|Rambler|Renault|Reva|Rivian|Rolls Royce|Rover|Saab|Samsung|Saturn|Scania|Scion|Seat|Shineray|Skoda|Smart|Soueast|Ssang Yong|Subaru|Suzuki|Tesla|Tianma|Tiger Truck|Toyota|VGV|Volkswagen|Volvo|Western Star|Xiaomi|Xpeng|Yugo|Zap|Zeekr|Zotye".split("|");
 
@@ -44,6 +44,6 @@ export function applyFilters(all: Listing[], f: Filters) {
     model: (a, b) => a.model.localeCompare(b.model),
   };
   if (f.sort && by[f.sort]) r = [...r].sort(by[f.sort]);
-  else r = [...r].sort((a, b) => Number(b.featured) - Number(a.featured));
+  else r = sortListingsByPlanPriority(r);
   return r;
 }
