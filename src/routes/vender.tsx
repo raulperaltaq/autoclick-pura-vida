@@ -180,7 +180,7 @@ function CheckOption({
 function Vender() {
   const [selectedPlan, setSelectedPlan] = useState<ListingPlanId>("free");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
-  const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  const [selectedPacks, setSelectedPacks] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<AddOnId[]>([]);
   const [agencyPlanSelected, setAgencyPlanSelected] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
@@ -192,15 +192,15 @@ function Vender() {
   const estimate = calculateListingEstimate({
     plan: selectedPlan,
     selectedTags,
-    selectedPacks: selectedPack ? [selectedPack] : [],
+    selectedPacks,
     selectedServices,
   });
   const selectedPackTags = new Set<string>(
     tagPacks
-      .filter((pack) => pack.id === selectedPack)
+      .filter((pack) => selectedPacks.includes(pack.id))
       .flatMap((pack) => pack.tags),
   );
-  const selectedPackOption = tagPacks.find((pack) => pack.id === selectedPack);
+  const selectedPackOptions = tagPacks.filter((pack) => selectedPacks.includes(pack.id));
   const selectedTagIds = new Set([...selectedTags, ...selectedPackTags]);
   const photoPreviews = useMemo(
     () => photos.map((file) => ({ file, url: URL.createObjectURL(file) })),
@@ -494,30 +494,34 @@ function Vender() {
           <div className="grid gap-3 sm:grid-cols-2">
             <label
               className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${
-                selectedPack === null ? "border-primary bg-secondary/60" : "border-border hover:bg-muted/60"
+                selectedPacks.length === 0 ? "border-primary bg-secondary/60" : "border-border hover:bg-muted/60"
               }`}
             >
               <input
-                type="radio"
-                name="tag-pack"
-                checked={selectedPack === null}
-                onChange={() => setSelectedPack(null)}
+                type="checkbox"
+                checked={selectedPacks.length === 0}
+                onChange={() => setSelectedPacks([])}
                 className="mt-1 h-4 w-4 accent-primary"
               />
-              <span className="font-semibold">No agregar pack de etiquetas</span>
+              <span className="font-semibold">Sin pack de etiquetas</span>
             </label>
             {tagPacks.map((pack) => (
               <label
                 key={pack.id}
                 className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${
-                  selectedPack === pack.id ? "border-primary bg-secondary/60" : "border-border hover:bg-muted/60"
+                  selectedPacks.includes(pack.id) ? "border-primary bg-secondary/60" : "border-border hover:bg-muted/60"
                 }`}
               >
                 <input
-                  type="radio"
-                  name="tag-pack"
-                  checked={selectedPack === pack.id}
-                  onChange={() => setSelectedPack(pack.id)}
+                  type="checkbox"
+                  checked={selectedPacks.includes(pack.id)}
+                  onChange={(event) => {
+                    setSelectedPacks((current) =>
+                      event.target.checked
+                        ? [...current, pack.id]
+                        : current.filter((id) => id !== pack.id),
+                    );
+                  }}
                   className="mt-1 h-4 w-4 accent-primary"
                 />
                 <span className="grid gap-1">
@@ -622,12 +626,12 @@ function Vender() {
               <dt>{listingPlans.find((plan) => plan.id === selectedPlan)?.name}</dt>
               <dd className="font-semibold">{formatColones(listingPlans.find((plan) => plan.id === selectedPlan)?.price ?? 0)}</dd>
             </div>
-            {selectedPackOption && (
-              <div className="flex justify-between gap-4">
-                <dt>{selectedPackOption.name}</dt>
-                <dd className="font-semibold">{formatColones(selectedPackOption.price)}</dd>
+            {selectedPackOptions.map((pack) => (
+              <div key={pack.id} className="flex justify-between gap-4">
+                <dt>{pack.name}</dt>
+                <dd className="font-semibold">{formatColones(pack.price)}</dd>
               </div>
-            )}
+            ))}
             {selectedTags
               .filter((tagId) => !selectedPackTags.has(tagId))
               .map((tagId) => {

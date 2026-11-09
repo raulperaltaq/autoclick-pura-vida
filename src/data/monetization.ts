@@ -81,41 +81,41 @@ export const paidTags = [
   { id: "llame-ya", name: "Llame ya", icon: "📞" },
 ] as const;
 
-export const tagPrice = 990;
+export const tagPrice = 325;
 
 export const tagPacks = [
   {
     id: "quick-sale",
     name: "Pack Vendedor Rápido",
-    price: 1990,
+    price: 895,
     tags: ["urge-vender", "negociable", "oferta"],
   },
   {
     id: "premium-tags",
     name: "Pack Premium",
-    price: 1990,
+    price: 895,
     tags: ["full-extras", "impecable", "poco-kilometraje"],
   },
   {
     id: "financing",
     name: "Pack Financiamiento",
-    price: 1990,
+    price: 895,
     tags: ["financio", "recibo-vehiculo", "negociable"],
   },
   {
     id: "agency",
     name: "Pack Agencia",
-    price: 1990,
+    price: 895,
     tags: ["record-agencia", "garantia", "impecable"],
   },
 ] as const;
 
 export const addOnServices = [
-  { id: "extra-photos", name: "Fotografías Extra", price: 1500, description: "Agrega hasta 10 fotografías adicionales." },
-  { id: "social-promotion", name: "Promoción en Redes Sociales", price: 4900, description: "Promoción en Facebook e Instagram Stories." },
-  { id: "boost-7-days", name: "Impulso por 7 Días", price: 2900, description: "Vuelve a subir el anuncio en los resultados." },
-  { id: "boost-30-days", name: "Impulso por 30 Días", price: 7900, description: "Prioridad continua en las búsquedas." },
-  { id: "verified-seal", name: "Sello de Vehículo Verificado", price: 5900, description: "Inspección documental e insignia de verificación." },
+  { id: "extra-photos", name: "Fotografías Extra", price: 990, description: "Agrega hasta 10 fotografías adicionales." },
+  { id: "social-promotion", name: "Promoción en Redes Sociales", price: 990, description: "Promoción en Facebook e Instagram Stories." },
+  { id: "boost-7-days", name: "Impulso por 7 Días", price: 990, description: "Vuelve a subir el anuncio en los resultados." },
+  { id: "boost-30-days", name: "Impulso por 30 Días", price: 1500, description: "Prioridad continua en las búsquedas." },
+  { id: "verified-seal", name: "Sello de Vehículo Verificado", price: 1200, description: "Inspección documental e insignia de verificación." },
   { id: "priority-whatsapp", name: "Contacto Prioritario por WhatsApp", price: 990, description: "Botón de contacto directo al WhatsApp del vendedor." },
 ] as const;
 

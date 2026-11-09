@@ -22,7 +22,18 @@ describe("listing monetization estimate", () => {
       selectedServices: [],
     });
 
-    expect(estimate).toBe(1990);
+    expect(estimate).toBe(895);
+  });
+
+  it("adds the price of every selected tag pack", () => {
+    const estimate = calculateListingEstimate({
+      plan: "free",
+      selectedTags: [],
+      selectedPacks: ["quick-sale", "premium-tags", "financing", "agency"],
+      selectedServices: [],
+    });
+
+    expect(estimate).toBe(4 * 895);
   });
 
   it("adds individual tags and services to the estimate", () => {
@@ -30,10 +41,17 @@ describe("listing monetization estimate", () => {
       plan: "featured",
       selectedTags: ["llame-ya", "oferta"],
       selectedPacks: [],
-      selectedServices: ["extra-photos", "boost-7-days"],
+      selectedServices: [
+        "extra-photos",
+        "social-promotion",
+        "boost-7-days",
+        "boost-30-days",
+        "verified-seal",
+        "priority-whatsapp",
+      ],
     });
 
-    expect(estimate).toBe(2475 + 2 * 990 + 1500 + 2900);
+    expect(estimate).toBe(2475 + 2 * 325 + 1500 + 2100 + 2100 + 5000 + 2800 + 990);
   });
 });
 
