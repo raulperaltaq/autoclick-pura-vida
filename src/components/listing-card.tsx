@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useLocation } from "@tanstack/react-router";
 import { MapPin } from "lucide-react";
 import { formatListingPrice, type Listing } from "@/data/listings";
 import { ListingFavoriteButton } from "@/components/listing-favorite-button";
@@ -12,6 +12,8 @@ const planBadges = {
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const badge = planBadges[listing.plan];
+  const location = useLocation();
+  const returnTo = `${location.pathname}${location.searchStr}`;
 
   return (
     <article className="group overflow-hidden rounded-2xl border border-border bg-card transition hover:-translate-y-1 hover:shadow-card">
@@ -19,6 +21,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
         <Link
           to="/autos/$id"
           params={{ id: listing.id }}
+          search={{ returnTo }}
           aria-label={`${listing.make} ${listing.model} ${listing.year}`}
         >
           <img
@@ -37,7 +40,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
         </span>
         <ListingFavoriteButton listingId={listing.id} />
       </div>
-      <Link to="/autos/$id" params={{ id: listing.id }} className="block p-4">
+      <Link to="/autos/$id" params={{ id: listing.id }} search={{ returnTo }} className="block p-4">
         <div className="flex items-start justify-between gap-2">
           <h3 className="text-lg font-bold leading-tight">
             {listing.make} {listing.model}

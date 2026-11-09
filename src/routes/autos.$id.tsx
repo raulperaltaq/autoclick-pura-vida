@@ -5,12 +5,29 @@ import {
   formatListingPrice,
   getListingOptionalDetails,
   getListingSellerFirstName,
+  listings,
+  type Listing,
 } from "@/data/listings";
 import { fetchListings } from "@/data/listings-repository";
 import { ListingFavoriteButton } from "@/components/listing-favorite-button";
 
 export const Route = createFileRoute("/autos/$id")({
-  loader: async ({ params }) => {
+  validateSearch: (search: Record<string, unknown>) => ({
+    returnTo:
+      typeof search["returnTo"] === "string" &&
+      search["returnTo"].startsWith("/") &&
+      !search["returnTo"].startsWith("//")
+        ? search["returnTo"]
+        : "/",
+  }),
+  loader: async ({ params, context }) => {
+    const cachedListings = context.queryClient.getQueryData<Listing[]>(["listings"]);
+    const cachedListing = cachedListings?.find((listing) => listing.id === params.id);
+    if (cachedListing) return { listing: cachedListing };
+
+    const sampleListing = listings.find((listing) => listing.id === params.id);
+    if (sampleListing) return { listing: sampleListing };
+
     const allListings = await fetchListings();
     const listing = allListings.find((l) => l.id === params.id);
     if (!listing) throw notFound();
@@ -46,6 +63,7 @@ export const Route = createFileRoute("/autos/$id")({
 
 function Detail() {
   const { listing: l } = Route.useLoaderData();
+  const { returnTo } = Route.useSearch();
   const [shareStatus, setShareStatus] = useState("");
   const specs: Array<[string, string | number | null]> = [
     ["Año", l.year],
@@ -93,13 +111,12 @@ function Detail() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <Link
-        to="/autos"
-        search={{ q: "" }}
+      <a
+        href={returnTo}
         className="text-sm font-semibold text-muted-foreground hover:text-foreground"
       >
-        ← Volver a resultados
-      </Link>
+        {returnTo === "/" ? "← Volver al inicio" : "← Volver a resultados"}
+      </a>
       <div className="mt-4 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <div>
           <div className="grid gap-3 sm:grid-cols-2">
