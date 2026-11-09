@@ -1,25 +1,40 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { MapPin, MessageCircle, Share2 } from "lucide-react";
 import { useState } from "react";
-import { formatCRC, listings } from "@/data/listings";
+import { formatListingPrice } from "@/data/listings";
+import { fetchListings } from "@/data/listings-repository";
 import { ListingFavoriteButton } from "@/components/listing-favorite-button";
 
 export const Route = createFileRoute("/autos/$id")({
-  loader: ({ params }) => {
-    const listing = listings.find((l) => l.id === params.id);
+  loader: async ({ params }) => {
+    const allListings = await fetchListings();
+    const listing = allListings.find((l) => l.id === params.id);
     if (!listing) throw notFound();
     return { listing };
   },
   head: ({ loaderData }) => {
     const l = loaderData?.listing;
-    const title = l ? `${l.make} ${l.model} ${l.year} en ${l.province} | autoclick.cr` : "Anuncio no disponible | autoclick.cr";
-    const desc = l ? `${formatCRC(l.price)} · ${l.km.toLocaleString("es-CR")} km · ${l.fuel}. ${l.description}` : "Este anuncio no está disponible.";
-    return { meta: [{ title }, { name: "description", content: desc }, { property: "og:title", content: title }, { property: "og:description", content: desc }] };
+    const title = l
+      ? `${l.make} ${l.model} ${l.year} en ${l.province} | autoclick.cr`
+      : "Anuncio no disponible | autoclick.cr";
+    const desc = l
+      ? `${formatListingPrice(l)} · ${l.km.toLocaleString("es-CR")} km · ${l.fuel}. ${l.description}`
+      : "Este anuncio no está disponible.";
+    return {
+      meta: [
+        { title },
+        { name: "description", content: desc },
+        { property: "og:title", content: title },
+        { property: "og:description", content: desc },
+      ],
+    };
   },
   notFoundComponent: () => (
     <main className="mx-auto max-w-6xl px-4 py-24 text-center">
       <h1 className="text-3xl font-extrabold">Anuncio no encontrado</h1>
-      <Link to="/autos" search={{ q: "" }} className="mt-4 inline-block font-semibold text-primary">Ver vehículos</Link>
+      <Link to="/autos" search={{ q: "" }} className="mt-4 inline-block font-semibold text-primary">
+        Ver vehículos
+      </Link>
     </main>
   ),
   component: Detail,
@@ -46,7 +61,7 @@ function Detail() {
     setShareStatus("");
     const shareData = {
       title: `${l.make} ${l.model} ${l.year} | autoclick.cr`,
-      text: `Mirá este vehículo: ${l.make} ${l.model} ${l.year} por ${formatCRC(l.price)}.`,
+      text: `Mirá este vehículo: ${l.make} ${l.model} ${l.year} por ${formatListingPrice(l)}.`,
       url: window.location.href,
     };
 
@@ -68,11 +83,23 @@ function Detail() {
 
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
-      <Link to="/autos" search={{ q: "" }} className="text-sm font-semibold text-muted-foreground hover:text-foreground">← Volver a resultados</Link>
+      <Link
+        to="/autos"
+        search={{ q: "" }}
+        className="text-sm font-semibold text-muted-foreground hover:text-foreground"
+      >
+        ← Volver a resultados
+      </Link>
       <div className="mt-4 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <div>
           <div className="relative">
-            <img src={l.image} alt={`${l.make} ${l.model}`} width={1024} height={768} className="w-full rounded-3xl object-cover" />
+            <img
+              src={l.image}
+              alt={`${l.make} ${l.model}`}
+              width={1024}
+              height={768}
+              className="w-full rounded-3xl object-cover"
+            />
             <ListingFavoriteButton listingId={l.id} />
           </div>
           <h2 className="mt-8 text-2xl font-bold">Descripción</h2>
@@ -88,9 +115,13 @@ function Detail() {
         </div>
         <aside className="h-fit space-y-4 lg:sticky lg:top-24">
           <div className="rounded-3xl border border-border bg-card p-6 shadow-card">
-            <h1 className="text-3xl font-extrabold leading-tight">{l.make} {l.model}</h1>
-            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground"><MapPin className="h-4 w-4" /> {l.province}</p>
-            <p className="mt-4 font-display text-4xl font-extrabold">{formatCRC(l.price)}</p>
+            <h1 className="text-3xl font-extrabold leading-tight">
+              {l.make} {l.model}
+            </h1>
+            <p className="mt-1 flex items-center gap-1 text-sm text-muted-foreground">
+              <MapPin className="h-4 w-4" /> {l.province}
+            </p>
+            <p className="mt-4 font-display text-4xl font-extrabold">{formatListingPrice(l)}</p>
             <div className="mt-6 grid gap-2">
               <a
                 href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
@@ -107,12 +138,19 @@ function Detail() {
               >
                 <Share2 className="h-5 w-5" /> Compartir anuncio
               </button>
-              {shareStatus && <p role="status" className="text-center text-sm text-muted-foreground">{shareStatus}</p>}
+              {shareStatus && (
+                <p role="status" className="text-center text-sm text-muted-foreground">
+                  {shareStatus}
+                </p>
+              )}
             </div>
           </div>
           <div className="rounded-3xl bg-secondary p-6">
             <p className="font-bold">{l.seller}</p>
-            <p className="mt-1 text-sm text-muted-foreground">Publicación directa entre personas. No necesitas crear una cuenta. Verificá la información y el estado del vehículo antes de comprar.</p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Publicación directa entre personas. No necesitas crear una cuenta. Verificá la
+              información y el estado del vehículo antes de comprar.
+            </p>
           </div>
         </aside>
       </div>

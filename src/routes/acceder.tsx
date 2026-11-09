@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { getAccountHomeRoute } from "@/lib/account-roles";
+import { safeReturnPath } from "@/lib/account";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/use-auth";
 
@@ -10,10 +11,14 @@ type AuthMode = "login" | "signup";
 type OAuthProvider = "google" | "azure" | "facebook";
 
 export const Route = createFileRoute("/acceder")({
-  validateSearch: (search: Record<string, unknown>) => ({
-    mode: search["mode"] === "signup" ? "signup" as const : "login" as const,
-    role: search["role"] === "agency" ? "agency" as const : "seller" as const,
-  }),
+  validateSearch: (search: Record<string, unknown>) => {
+    const redirect = safeReturnPath(search["redirect"]);
+    return {
+      mode: search["mode"] === "signup" ? ("signup" as const) : ("login" as const),
+      role: search["role"] === "agency" ? ("agency" as const) : ("seller" as const),
+      ...(redirect ? { redirect } : {}),
+    };
+  },
   head: () => ({
     meta: [
       { title: "Acceder o crear cuenta | autoclick.cr" },
@@ -36,7 +41,9 @@ function AccessPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [oauthProvisioning, setOauthProvisioning] = useState(false);
   const [oauthProvisionedUser, setOauthProvisionedUser] = useState<string | null>(null);
-  const [oauthProvisionAttemptedUser, setOauthProvisionAttemptedUser] = useState<string | null>(null);
+  const [oauthProvisionAttemptedUser, setOauthProvisionAttemptedUser] = useState<string | null>(
+    null,
+  );
 
   useEffect(() => {
     setMode(search.mode);
@@ -44,13 +51,18 @@ function AccessPage() {
   }, [search.mode, search.role]);
 
   useEffect(() => {
-    const isOAuthSignup = Boolean(user && mode === "signup" && user.app_metadata.provider !== "email");
-    if (!user || isLoading || !profile || (isOAuthSignup && oauthProvisionedUser !== user.id)) return;
-    window.location.replace(getAccountHomeRoute(profile.role));
-  }, [isLoading, mode, oauthProvisionedUser, profile, user]);
+    const isOAuthSignup = Boolean(
+      user && mode === "signup" && user.app_metadata.provider !== "email",
+    );
+    if (!user || isLoading || !profile || (isOAuthSignup && oauthProvisionedUser !== user.id))
+      return;
+    window.location.replace(search.redirect || getAccountHomeRoute(profile.role));
+  }, [isLoading, mode, oauthProvisionedUser, profile, search.redirect, user]);
 
   useEffect(() => {
-    const isOAuthSignup = Boolean(user && mode === "signup" && user.app_metadata.provider !== "email");
+    const isOAuthSignup = Boolean(
+      user && mode === "signup" && user.app_metadata.provider !== "email",
+    );
     if (
       !isOAuthSignup ||
       !user ||
@@ -59,7 +71,8 @@ function AccessPage() {
       oauthProvisionedUser === user.id ||
       oauthProvisionAttemptedUser === user.id ||
       oauthProvisioning
-    ) return;
+    )
+      return;
 
     let active = true;
     setOauthProvisionAttemptedUser(user.id);
@@ -73,7 +86,9 @@ function AccessPage() {
       } catch (error) {
         if (!active) return;
         console.error("Could not provision the OAuth account:", error);
-        setErrorMessage(error instanceof Error ? error.message : "No se pudo configurar el perfil de la cuenta.");
+        setErrorMessage(
+          error instanceof Error ? error.message : "No se pudo configurar el perfil de la cuenta.",
+        );
       } finally {
         if (active) setOauthProvisioning(false);
       }
@@ -97,6 +112,7 @@ function AccessPage() {
     const url = new URL("/acceder", window.location.origin);
     url.searchParams.set("mode", redirectMode);
     url.searchParams.set("role", accountType);
+    if (search.redirect) url.searchParams.set("redirect", search.redirect);
     return url.toString();
   };
 
@@ -106,7 +122,9 @@ function AccessPage() {
     setErrorMessage("");
 
     if (!supabase) {
-      setErrorMessage("La autenticación no está configurada. Conectá Supabase desde Lovable para continuar.");
+      setErrorMessage(
+        "La autenticación no está configurada. Conectá Supabase desde Lovable para continuar.",
+      );
       return;
     }
 
@@ -138,7 +156,9 @@ function AccessPage() {
       }
     } catch (error) {
       console.error("Authentication request failed:", error);
-      setErrorMessage(error instanceof Error ? error.message : "No se pudo completar la autenticación.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "No se pudo completar la autenticación.",
+      );
     } finally {
       setIsSubmitting(false);
     }
@@ -148,7 +168,9 @@ function AccessPage() {
     setMessage("");
     setErrorMessage("");
     if (!supabase) {
-      setErrorMessage("La autenticación no está configurada. Conectá Supabase desde Lovable para continuar.");
+      setErrorMessage(
+        "La autenticación no está configurada. Conectá Supabase desde Lovable para continuar.",
+      );
       return;
     }
 
@@ -164,7 +186,9 @@ function AccessPage() {
       if (error) throw error;
     } catch (error) {
       console.error(`Sign-in with ${provider} failed:`, error);
-      setErrorMessage(error instanceof Error ? error.message : "No se pudo iniciar sesión con ese proveedor.");
+      setErrorMessage(
+        error instanceof Error ? error.message : "No se pudo iniciar sesión con ese proveedor.",
+      );
       setIsSubmitting(false);
     }
   };
@@ -185,11 +209,16 @@ function AccessPage() {
           Navegar y buscar vehículos no requiere iniciar sesión.
         </p>
 
-        <div className="mt-6 grid grid-cols-2 gap-2 rounded-full bg-muted p-1" aria-label="Tipo de cuenta">
-          {([
-            ["seller", "Particular"],
-            ["agency", "Agencia"],
-          ] as const).map(([type, label]) => (
+        <div
+          className="mt-6 grid grid-cols-2 gap-2 rounded-full bg-muted p-1"
+          aria-label="Tipo de cuenta"
+        >
+          {(
+            [
+              ["seller", "Particular"],
+              ["agency", "Agencia"],
+            ] as const
+          ).map(([type, label]) => (
             <button
               key={type}
               type="button"
@@ -206,9 +235,21 @@ function AccessPage() {
         </div>
 
         <div className="mt-5 grid gap-2 sm:grid-cols-3">
-          <OAuthButton label="Google" disabled={!isConfigured || isSubmitting || isLoading} onClick={() => void handleOAuth("google")} />
-          <OAuthButton label="Microsoft" disabled={!isConfigured || isSubmitting || isLoading} onClick={() => void handleOAuth("azure")} />
-          <OAuthButton label="Facebook" disabled={!isConfigured || isSubmitting || isLoading} onClick={() => void handleOAuth("facebook")} />
+          <OAuthButton
+            label="Google"
+            disabled={!isConfigured || isSubmitting || isLoading}
+            onClick={() => void handleOAuth("google")}
+          />
+          <OAuthButton
+            label="Microsoft"
+            disabled={!isConfigured || isSubmitting || isLoading}
+            onClick={() => void handleOAuth("azure")}
+          />
+          <OAuthButton
+            label="Facebook"
+            disabled={!isConfigured || isSubmitting || isLoading}
+            onClick={() => void handleOAuth("facebook")}
+          />
         </div>
 
         <div className="my-6 flex items-center gap-3 text-xs text-muted-foreground">
@@ -261,13 +302,18 @@ function AccessPage() {
             disabled={!isConfigured || isSubmitting || isLoading}
             className="mt-1 rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
           >
-            {isSubmitting || oauthProvisioning ? "Procesando…" : mode === "signup" ? "Crear cuenta" : "Iniciar sesión"}
+            {isSubmitting || oauthProvisioning
+              ? "Procesando…"
+              : mode === "signup"
+                ? "Crear cuenta"
+                : "Iniciar sesión"}
           </button>
         </form>
 
         {!isConfigured && (
           <p role="status" className="mt-4 rounded-xl bg-muted p-3 text-sm text-muted-foreground">
-            La autenticación estará disponible al configurar Supabase y las variables de entorno indicadas en
+            La autenticación estará disponible al configurar Supabase y las variables de entorno
+            indicadas en
             <code className="mx-1 font-semibold">.env.example</code>.
           </p>
         )}
@@ -283,8 +329,16 @@ function AccessPage() {
             </button>
           </div>
         )}
-        {message && <p role="status" className="mt-4 text-sm text-primary">{message}</p>}
-        {errorMessage && <p role="alert" className="mt-4 text-sm text-destructive">{errorMessage}</p>}
+        {message && (
+          <p role="status" className="mt-4 text-sm text-primary">
+            {message}
+          </p>
+        )}
+        {errorMessage && (
+          <p role="alert" className="mt-4 text-sm text-destructive">
+            {errorMessage}
+          </p>
+        )}
         {errorMessage && user && mode === "signup" && (
           <button
             type="button"
