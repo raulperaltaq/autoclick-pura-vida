@@ -52,7 +52,7 @@ function Index() {
             <input
               value={q}
               onChange={(e) => setQ(e.target.value)}
-              placeholder="Ej: Toyota híbrido en San José"
+              placeholder="Ej: Toyota Corolla 2022"
               className="min-w-0 flex-1 bg-transparent py-2 text-foreground outline-none placeholder:text-muted-foreground"
             />
             <button type="submit" className="rounded-full bg-primary px-5 py-2.5 font-semibold text-primary-foreground hover:bg-primary/90">Buscar</button>

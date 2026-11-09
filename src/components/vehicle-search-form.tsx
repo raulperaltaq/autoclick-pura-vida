@@ -37,7 +37,7 @@ export function VehicleSearchForm({ draft, onDraftChange, onSearch }: VehicleSea
         type="number"
         min={1950}
         max={new Date().getFullYear() + 1}
-        placeholder="Año (desde 1950)"
+        placeholder="Año"
         value={draft.year ?? ""}
         onChange={(event) => set("year", event.target.value)}
         className={`w-44 ${field}`}
