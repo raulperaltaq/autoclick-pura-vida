@@ -1,7 +1,11 @@
 import { createFileRoute, Link, notFound } from "@tanstack/react-router";
 import { MapPin, MessageCircle, Share2 } from "lucide-react";
 import { useState } from "react";
-import { formatListingPrice } from "@/data/listings";
+import {
+  formatListingPrice,
+  getListingOptionalDetails,
+  getListingSellerFirstName,
+} from "@/data/listings";
 import { fetchListings } from "@/data/listings-repository";
 import { ListingFavoriteButton } from "@/components/listing-favorite-button";
 
@@ -18,7 +22,7 @@ export const Route = createFileRoute("/autos/$id")({
       ? `${l.make} ${l.model} ${l.year} en ${l.province} | autoclick.cr`
       : "Anuncio no disponible | autoclick.cr";
     const desc = l
-      ? `${formatListingPrice(l)} · ${l.km.toLocaleString("es-CR")} km · ${l.fuel}. ${l.description}`
+      ? `${formatListingPrice(l)}${l.km !== null ? ` · ${l.km.toLocaleString("es-CR")} km` : ""} · ${l.fuel}${l.description ? `. ${l.description}` : ""}`
       : "Este anuncio no está disponible.";
     return {
       meta: [
@@ -43,16 +47,22 @@ export const Route = createFileRoute("/autos/$id")({
 function Detail() {
   const { listing: l } = Route.useLoaderData();
   const [shareStatus, setShareStatus] = useState("");
-  const specs = [
+  const specs: Array<[string, string | number | null]> = [
     ["Año", l.year],
-    ["Kilometraje", `${l.km.toLocaleString("es-CR")} km`],
+    ["Kilometraje", l.km === null ? null : `${l.km.toLocaleString("es-CR")} km`],
     ["Combustible", l.fuel],
     ["Transmisión", l.transmission],
-    ["Carrocería", l.body],
+    ["Estilo", l.style],
+    ["Estado", l.condition],
     ["Provincia", l.province],
+    ["Puertas", l.doors],
+    ["Financiamiento", l.financing === null ? null : l.financing ? "Sí" : "No"],
+    ["Recibe vehículo", l.trade === null ? null : l.trade ? "Sí" : "No"],
   ];
+  const optionalDetails = getListingOptionalDetails(l.details);
   const phone = l.phone.replace(/\D/g, "");
   const whatsappNumber = phone.startsWith("506") ? phone : `506${phone}`;
+  const contactPhone = phone.startsWith("506") ? phone.slice(3) : phone;
   const whatsappMessage = encodeURIComponent(
     `Hola, me interesa el ${l.make} ${l.model} ${l.year} publicado en autoclick.cr.`,
   );
@@ -92,26 +102,49 @@ function Detail() {
       </Link>
       <div className="mt-4 grid gap-8 lg:grid-cols-[1.5fr_1fr]">
         <div>
-          <div className="relative">
-            <img
-              src={l.image}
-              alt={`${l.make} ${l.model}`}
-              width={1024}
-              height={768}
-              className="w-full rounded-3xl object-cover"
-            />
+          <div className="grid gap-3 sm:grid-cols-2">
+            {l.images.map((image, index) => (
+              <img
+                key={`${image}-${index}`}
+                src={image}
+                alt={`${l.make} ${l.model}, foto ${index + 1}`}
+                width={1024}
+                height={768}
+                className={`w-full rounded-3xl object-cover ${index === 0 ? "sm:col-span-2" : ""}`}
+              />
+            ))}
+          </div>
+          <div className="relative -mt-10 flex justify-end pr-4">
             <ListingFavoriteButton listingId={l.id} />
           </div>
-          <h2 className="mt-8 text-2xl font-bold">Descripción</h2>
-          <p className="mt-2 text-muted-foreground">{l.description}</p>
-          <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {specs.map(([k, v]) => (
-              <div key={k} className="rounded-2xl bg-muted p-4">
-                <dt className="text-xs text-muted-foreground">{k}</dt>
-                <dd className="font-semibold">{v}</dd>
-              </div>
-            ))}
-          </dl>
+          {l.description.trim() && (
+            <>
+              <h2 className="mt-8 text-2xl font-bold">Descripción</h2>
+              <p className="mt-2 whitespace-pre-line text-muted-foreground">{l.description}</p>
+            </>
+          )}
+          {specs.some(([, value]) => value !== null && value !== "") && (
+            <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {specs
+                .filter(([, value]) => value !== null && value !== "")
+                .map(([k, v]) => (
+                  <div key={k} className="rounded-2xl bg-muted p-4">
+                    <dt className="text-xs text-muted-foreground">{k}</dt>
+                    <dd className="font-semibold">{v}</dd>
+                  </div>
+                ))}
+            </dl>
+          )}
+          {optionalDetails.length > 0 && (
+            <dl className="mt-6 grid grid-cols-2 gap-3 sm:grid-cols-3">
+              {optionalDetails.map(({ label, value }) => (
+                <div key={label} className="rounded-2xl bg-muted p-4">
+                  <dt className="text-xs text-muted-foreground">{label}</dt>
+                  <dd className="font-semibold">{value}</dd>
+                </div>
+              ))}
+            </dl>
+          )}
         </div>
         <aside className="h-fit space-y-4 lg:sticky lg:top-24">
           <div className="rounded-3xl border border-border bg-card p-6 shadow-card">
@@ -124,13 +157,21 @@ function Detail() {
             <p className="mt-4 font-display text-4xl font-extrabold">{formatListingPrice(l)}</p>
             <div className="mt-6 grid gap-2">
               <a
-                href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
-                target="_blank"
-                rel="noreferrer"
+                href={`tel:+${whatsappNumber}`}
                 className="inline-flex items-center justify-center gap-2 rounded-full bg-primary px-5 py-3 font-bold text-primary-foreground hover:bg-primary/90"
               >
-                <MessageCircle className="h-5 w-5" /> Contactar por WhatsApp
+                Llamar al {contactPhone}
               </a>
+              {l.whatsappEnabled && (
+                <a
+                  href={`https://wa.me/${whatsappNumber}?text=${whatsappMessage}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center justify-center gap-2 rounded-full border border-border px-5 py-3 font-bold hover:bg-muted"
+                >
+                  <MessageCircle className="h-5 w-5" /> Contactar por WhatsApp
+                </a>
+              )}
               <button
                 type="button"
                 onClick={() => void shareListing()}
@@ -146,7 +187,9 @@ function Detail() {
             </div>
           </div>
           <div className="rounded-3xl bg-secondary p-6">
-            <p className="font-bold">{l.seller}</p>
+            {getListingSellerFirstName(l.seller) && (
+              <p className="font-bold">{getListingSellerFirstName(l.seller)}</p>
+            )}
             <p className="mt-1 text-sm text-muted-foreground">
               Publicación directa entre personas. No necesitas crear una cuenta. Verificá la
               información y el estado del vehículo antes de comprar.

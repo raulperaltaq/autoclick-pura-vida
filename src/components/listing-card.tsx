@@ -44,7 +44,10 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </h3>
         </div>
         <p className="mt-1 text-sm text-muted-foreground">
-          {listing.year} · {listing.km.toLocaleString("es-CR")} km · {listing.transmission}
+          {listing.year}
+          {listing.km !== null && <> · {listing.km.toLocaleString("es-CR")} km</>}
+          {" · "}
+          {listing.transmission}
         </p>
         <div className="mt-3">
           <p className="font-display text-xl font-extrabold">{formatListingPrice(listing)}</p>

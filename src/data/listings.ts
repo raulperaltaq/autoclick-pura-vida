@@ -10,23 +10,65 @@ export type Listing = {
   year: number;
   price: number;
   currency: "CRC" | "USD";
-  km: number;
+  km: number | null;
   fuel: "Gasolina" | "Diésel" | "Híbrido" | "Eléctrico";
   transmission: "Automática" | "Manual" | "CVT" | "Doble embrague";
   body: "SUV" | "Pickup" | "Sedán" | "Hatchback";
   province: string;
   style: string;
   condition: "Nuevo" | "Usado";
-  doors: number;
-  financing: boolean;
-  trade: boolean;
+  doors: number | null;
+  financing: boolean | null;
+  trade: boolean | null;
   image: string;
+  images: string[];
   plan: ListingPlanId;
   publishedAt: string;
   seller: string;
   phone: string;
   description: string;
+  details: Record<string, string | string[]>;
+  whatsappEnabled: boolean;
 };
+
+const optionalDetailLabels: Record<string, string> = {
+  engine_cc: "Cilindrada",
+  passengers: "Pasajeros",
+  negotiable: "Precio negociable",
+  exterior_color: "Color exterior",
+  interior_color: "Color interior",
+  autonomy_km: "Autonomía",
+  battery_kwh: "Capacidad de batería",
+  taxes_paid: "Impuestos pagados",
+  plate: "Placa",
+  canton: "Cantón",
+  previous_owners: "Dueños anteriores",
+  average_consumption: "Consumo promedio",
+  battery_condition: "Estado de la batería",
+  warranty: "Garantía",
+  seller_type: "Tipo de vendedor",
+  youtube_url: "Video",
+  maintenance_history: "Historial de mantenimiento",
+  extras: "Equipamiento",
+};
+
+export function getListingSellerFirstName(seller: string): string {
+  return seller.trim().split(/\s+/)[0] ?? "";
+}
+
+export function getListingOptionalDetails(
+  details: Record<string, string | string[]>,
+): Array<{ label: string; value: string }> {
+  return Object.entries(details).flatMap(([key, rawValue]) => {
+    const label = optionalDetailLabels[key];
+    if (!label) return [];
+    const values = (Array.isArray(rawValue) ? rawValue : [rawValue])
+      .map((value) => value.trim())
+      .filter(Boolean);
+    if (!values.length) return [];
+    return [{ label, value: values.join(", ") }];
+  });
+}
 
 const listingPlanPriority: Record<ListingPlanId, number> = {
   "premium-plus": 0,
@@ -62,12 +104,15 @@ const base: Listing[] = [
     financing: true,
     trade: false,
     image: car1,
+    images: [car1],
     plan: "premium-plus",
     publishedAt: "2025-02-20T14:00:00.000Z",
     seller: "Autos Escazú",
     phone: "50688887777",
     description:
       "Único dueño, mantenimientos en agencia, marchamo al día y RTV vigente. Llantas nuevas.",
+    details: {},
+    whatsappEnabled: false,
   },
   {
     id: "tucson-2020",
@@ -87,12 +132,15 @@ const base: Listing[] = [
     financing: false,
     trade: true,
     image: car2,
+    images: [car2],
     plan: "free",
     publishedAt: "2025-02-24T14:00:00.000Z",
     seller: "María R.",
     phone: "50687776666",
     description:
       "Muy cuidado, sin choques, cámara de retroceso y Apple CarPlay. Se recibe vehículo de menor valor.",
+    details: {},
+    whatsappEnabled: false,
   },
   {
     id: "hilux-2021",
@@ -112,11 +160,14 @@ const base: Listing[] = [
     financing: true,
     trade: true,
     image: car3,
+    images: [car3],
     plan: "premium",
     publishedAt: "2025-02-22T14:00:00.000Z",
     seller: "Pickups del Valle",
     phone: "50686665555",
     description: "Doble cabina, 4x4, cobertor de cajón y estribos. Ideal para trabajo y finca.",
+    details: {},
+    whatsappEnabled: false,
   },
   {
     id: "rav4-2019",
@@ -136,11 +187,14 @@ const base: Listing[] = [
     financing: false,
     trade: false,
     image: car1,
+    images: [car1],
     plan: "free",
     publishedAt: "2025-02-21T14:00:00.000Z",
     seller: "José M.",
     phone: "50685554444",
     description: "Papeles en regla, recién pintado el bumper delantero. Precio negociable.",
+    details: {},
+    whatsappEnabled: false,
   },
   {
     id: "tucson-2023",
@@ -160,11 +214,14 @@ const base: Listing[] = [
     financing: true,
     trade: false,
     image: car2,
+    images: [car2],
     plan: "featured",
     publishedAt: "2025-02-23T14:00:00.000Z",
     seller: "Hyundai Liberia Seminuevos",
     phone: "50684443333",
     description: "Garantía de fábrica vigente, techo panorámico y asientos de cuero.",
+    details: {},
+    whatsappEnabled: false,
   },
   {
     id: "hilux-2017",
@@ -184,11 +241,14 @@ const base: Listing[] = [
     financing: false,
     trade: true,
     image: car3,
+    images: [car3],
     plan: "free",
     publishedAt: "2025-02-25T14:00:00.000Z",
     seller: "Carlos V.",
     phone: "50683332222",
     description: "Motor impecable, uso familiar. Se entrega con marchamo pagado.",
+    details: {},
+    whatsappEnabled: false,
   },
 ];
 

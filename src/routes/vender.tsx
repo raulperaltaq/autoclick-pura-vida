@@ -81,6 +81,26 @@ const extras = [
 const transmissionOptions = ["Manual", "Automática", "CVT", "Doble embrague"] as const;
 const fuelOptions = ["Gasolina", "Diésel", "Híbrido", "Eléctrico"] as const;
 const conditionOptions = ["Nuevo", "Usado"] as const;
+const publicDetailFields = new Set([
+  "engine_cc",
+  "passengers",
+  "negotiable",
+  "exterior_color",
+  "interior_color",
+  "autonomy_km",
+  "battery_kwh",
+  "taxes_paid",
+  "plate",
+  "canton",
+  "previous_owners",
+  "average_consumption",
+  "battery_condition",
+  "warranty",
+  "seller_type",
+  "youtube_url",
+  "maintenance_history",
+  "extras",
+]);
 
 function isOneOf<T extends string>(value: string, choices: readonly T[]): value is T {
   return choices.some((choice) => choice === value);
@@ -176,10 +196,12 @@ function SelectField({
 
 function CheckOption({
   label,
+  name,
   checked,
   onChange,
 }: {
   label: string;
+  name?: string;
   checked?: boolean;
   onChange?: (checked: boolean) => void;
 }) {
@@ -187,6 +209,8 @@ function CheckOption({
     <label className="flex items-start gap-2 rounded-lg border border-border p-3 text-sm font-medium hover:bg-muted/60">
       <input
         type="checkbox"
+        name={name}
+        value={label}
         checked={checked}
         onChange={onChange ? (event) => onChange(event.target.checked) : undefined}
         className="mt-0.5 h-4 w-4 accent-primary"
@@ -346,10 +370,12 @@ function Vender() {
     const form = event.currentTarget;
     const formData = new FormData(form);
     const text = (key: string) => String(formData.get(key) ?? "").trim();
-    const numeric = (key: string, fallback?: number) => {
+    const numeric = (key: string, required = false): number | null => {
       const raw = text(key);
-      if (!raw && fallback !== undefined) return fallback;
-      if (!raw) throw new Error(`Completá el campo ${key}.`);
+      if (!raw) {
+        if (required) throw new Error(`Completá el campo ${key}.`);
+        return null;
+      }
       const value = Number(raw);
       if (!Number.isFinite(value)) throw new Error(`Revisá el campo ${key}.`);
       return value;
@@ -367,7 +393,7 @@ function Vender() {
             : "SUV";
       const detailValues: Record<string, string | string[]> = {};
       for (const [key, value] of formData.entries()) {
-        if (typeof value === "string" && key !== "main-photo") {
+        if (typeof value === "string" && publicDetailFields.has(key) && value.trim()) {
           const current = detailValues[key];
           detailValues[key] = current
             ? [...(Array.isArray(current) ? current : [current]), value]
@@ -379,6 +405,11 @@ function Vender() {
       const fuel = text("fuel");
       const transmission = text("transmission");
       const condition = text("condition");
+      const year = numeric("year", true);
+      const price = numeric("price", true);
+      if (year === null || price === null) {
+        throw new Error("Completá el año y el precio del vehículo.");
+      }
       if (!isOneOf(fuel, fuelOptions)) throw new Error("Seleccioná el combustible del vehículo.");
       if (!isOneOf(transmission, transmissionOptions))
         throw new Error("Seleccioná la transmisión.");
@@ -388,29 +419,24 @@ function Vender() {
       await publishListing({
         make: text("make"),
         model: text("model"),
-        year: numeric("year"),
-        price: numeric("price"),
+        year,
+        price,
         currency: text("currency") === "USD" ? "USD" : "CRC",
-        km: numeric("km", 0),
+        km: numeric("km"),
         fuel,
         transmission,
         body,
         province: text("province"),
         style,
         condition,
-        doors: numeric("doors", 4),
-        financing: text("financing") === "Sí",
-        trade: text("trade") === "Sí",
-        seller: text("seller"),
+        doors: numeric("doors"),
+        financing: text("financing") === "" ? null : text("financing") === "Sí",
+        trade: text("trade") === "" ? null : text("trade") === "Sí",
+        seller: text("seller").split(/\s+/)[0] ?? "",
         phone: phone.startsWith("506") ? phone : `506${phone}`,
         description: text("description"),
         requestedPlan: selectedPlan,
-        details: {
-          ...detailValues,
-          selected_tags: selectedTags,
-          selected_packs: selectedPacks,
-          selected_services: selectedServices,
-        },
+        details: detailValues,
         photos,
         mainPhotoIndex: mainPhoto,
         extraPhotos: hasExtraPhotos,
@@ -822,13 +848,26 @@ function Vender() {
                 />
               </Field>
               <Field label="Cilindrada (cc)">
-                <input type="number" min={0} placeholder="Ej. 2000" className={field} />
+                <input
+                  name="engine_cc"
+                  type="number"
+                  min={0}
+                  placeholder="Ej. 2000"
+                  className={field}
+                />
               </Field>
               <SelectField label="Estilo" name="style" options={styles} required />
               <Field label="Número de pasajeros">
-                <input type="number" min={1} max={60} placeholder="Ej. 5" className={field} />
+                <input
+                  name="passengers"
+                  type="number"
+                  min={1}
+                  max={60}
+                  placeholder="Ej. 5"
+                  className={field}
+                />
               </Field>
-              <Field label="Año">
+              <Field label="Año" required>
                 <input
                   type="number"
                   name="year"
@@ -994,7 +1033,7 @@ function Vender() {
           >
             <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
               {extras.map((extra) => (
-                <CheckOption key={extra} label={extra} />
+                <CheckOption key={extra} name="extras" label={extra} />
               ))}
             </div>
           </Section>
@@ -1183,12 +1222,11 @@ function Vender() {
             description="Estos datos se mostrarán para que te contacten directamente."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Nombre">
+              <Field label="Nombre (sin apellido)">
                 <input
-                  required
                   name="seller"
                   autoComplete="name"
-                  placeholder="Tu nombre"
+                  placeholder="Solo tu nombre"
                   className={field}
                 />
               </Field>

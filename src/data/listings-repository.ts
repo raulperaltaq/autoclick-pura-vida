@@ -16,7 +16,10 @@ const bodies = new Set<Listing["body"]>(["SUV", "Pickup", "Sedán", "Hatchback"]
 const conditions = new Set<Listing["condition"]>(["Nuevo", "Usado"]);
 const supportedImageTypes = new Set(["image/jpeg", "image/png", "image/webp", "image/avif"]);
 
-export type ListingSubmission = Omit<Listing, "id" | "image" | "plan" | "publishedAt"> & {
+export type ListingSubmission = Omit<
+  Listing,
+  "id" | "image" | "images" | "plan" | "publishedAt" | "details" | "whatsappEnabled"
+> & {
   requestedPlan: ListingPlanId;
   details: Record<string, string | string[]>;
   photos: File[];
@@ -44,12 +47,40 @@ function requiredNumber(record: Record<string, unknown>, key: string): number {
   return value;
 }
 
-function requiredBoolean(record: Record<string, unknown>, key: string): boolean {
+function optionalBoolean(record: Record<string, unknown>, key: string): boolean | null {
   const value = record[key];
-  if (typeof value !== "boolean") {
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "boolean")
     throw new Error(`Invalid listing data: ${key} must be a boolean.`);
+  return value;
+}
+
+function optionalNumber(record: Record<string, unknown>, key: string): number | null {
+  const value = record[key];
+  if (value === null || value === undefined) return null;
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    throw new Error(`Invalid listing data: ${key} must be a finite number.`);
   }
   return value;
+}
+
+function optionalString(record: Record<string, unknown>, key: string): string {
+  const value = record[key];
+  if (value === null || value === undefined) return "";
+  if (typeof value !== "string") throw new Error(`Invalid listing data: ${key} must be a string.`);
+  return value;
+}
+
+function optionalDetails(value: unknown): Record<string, string | string[]> {
+  if (!isRecord(value)) return {};
+  const details: Record<string, string | string[]> = {};
+  for (const [key, item] of Object.entries(value)) {
+    if (typeof item === "string") details[key] = item;
+    else if (Array.isArray(item) && item.every((entry) => typeof entry === "string")) {
+      details[key] = item;
+    }
+  }
+  return details;
 }
 
 function requiredChoice<T extends string>(
@@ -84,22 +115,32 @@ function toListing(value: unknown): Listing {
     year: requiredNumber(value, "year"),
     price: requiredNumber(value, "price"),
     currency: requiredChoice(value, "currency", currencies),
-    km: requiredNumber(value, "km"),
+    km: optionalNumber(value, "km"),
     fuel: requiredChoice(value, "fuel", fuels),
     transmission: requiredChoice(value, "transmission", transmissions),
     body: requiredChoice(value, "body", bodies),
     province: requiredString(value, "province"),
     style: requiredString(value, "style"),
     condition: requiredChoice(value, "condition", conditions),
-    doors: requiredNumber(value, "doors"),
-    financing: requiredBoolean(value, "financing"),
-    trade: requiredBoolean(value, "trade"),
+    doors: optionalNumber(value, "doors"),
+    financing: optionalBoolean(value, "financing"),
+    trade: optionalBoolean(value, "trade"),
     image: requiredString(value, "image_url"),
+    images:
+      Array.isArray(value["image_urls"]) &&
+      value["image_urls"].length > 0 &&
+      value["image_urls"].every(
+        (image): image is string => typeof image === "string" && image.trim().length > 0,
+      )
+        ? value["image_urls"]
+        : [requiredString(value, "image_url")],
     plan: requiredChoice(value, "plan", plans),
     publishedAt,
-    seller: requiredString(value, "seller"),
+    seller: optionalString(value, "seller"),
     phone: requiredString(value, "phone"),
-    description: requiredString(value, "description"),
+    description: optionalString(value, "description"),
+    details: optionalDetails(value["details"]),
+    whatsappEnabled: value["whatsapp_enabled"] === true,
   };
 }
 
@@ -109,7 +150,7 @@ export async function fetchListings(): Promise<Listing[]> {
   const { data, error } = await supabase
     .from("listings")
     .select(
-      "id, make, model, year, price, currency, km, fuel, transmission, body, province, style, condition, doors, financing, trade, image_url, plan, published_at, seller, phone, description",
+      "id, make, model, year, price, currency, km, fuel, transmission, body, province, style, condition, doors, financing, trade, image_url, image_urls, plan, published_at, seller, phone, description, details, whatsapp_enabled",
     )
     .eq("status", "published")
     .order("published_at", { ascending: false });
@@ -133,10 +174,15 @@ export async function publishListing(input: ListingSubmission): Promise<void> {
   ) {
     throw new Error("La cantidad de fotografías no coincide con el plan seleccionado.");
   }
-  if (!input.make.trim() || !input.model.trim() || !input.seller.trim()) {
-    throw new Error("Completá la marca, el modelo y el nombre del vendedor.");
+  if (!input.make.trim() || !input.model.trim()) {
+    throw new Error("Completá la marca y el modelo del vehículo.");
   }
-  if (!Number.isInteger(input.year) || input.year < 1900 || input.price <= 0 || input.km < 0) {
+  if (
+    !Number.isInteger(input.year) ||
+    input.year < 1900 ||
+    input.price <= 0 ||
+    (input.km !== null && input.km < 0)
+  ) {
     throw new Error("Revisá el año, el precio y el kilometraje del vehículo.");
   }
   if (!/^506\d{8}$/.test(input.phone)) {
@@ -198,6 +244,7 @@ export async function publishListing(input: ListingSubmission): Promise<void> {
       seller: input.seller,
       phone: input.phone,
       description: input.description,
+      whatsapp_enabled: false,
       plan: "free",
       requested_plan: input.requestedPlan,
       published_at: null,
