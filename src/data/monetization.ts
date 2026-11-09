@@ -121,11 +121,39 @@ export const addOnServices = [
 
 export type AddOnId = (typeof addOnServices)[number]["id"];
 
-export const agencyStarter = {
-  name: "Plan Agencia Starter",
-  pricePerMonth: 19900,
-  features: ["Hasta 20 vehículos activos", "Perfil empresarial", "Logo de agencia", "Estadísticas básicas"],
-} as const;
+export const agencyPlans = [
+  {
+    id: "starter",
+    name: "Starter",
+    pricePerMonth: 19500,
+    description: "Ideal para agencias pequeñas y medianas.",
+    features: [
+      "30 publicaciones destacadas activas",
+      'Etiqueta "Destacado"',
+      "Hasta 6 fotografías por vehículo",
+      "Prioridad sobre publicaciones gratuitas",
+      "Estadísticas básicas",
+      "Perfil de agencia",
+    ],
+  },
+  {
+    id: "deluxe",
+    name: "Deluxe",
+    pricePerMonth: 34500,
+    description: "Diseñado para agencias con mayor inventario.",
+    badge: "Más vendido ⭐",
+    features: [
+      "45 publicaciones Premium activas",
+      'Etiqueta "Premium"',
+      "Hasta 10 fotografías por vehículo",
+      "Prioridad en búsquedas",
+      "Aparición en vehículos recomendados",
+      "Estadísticas avanzadas",
+      "Perfil de agencia verificado",
+      "Soporte prioritario",
+    ],
+  },
+] as const;
 
 export const includedBenefits = [
   "Publicación según el tiempo del plan seleccionado",

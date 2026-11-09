@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 
 import {
   calculateListingEstimate,
+  agencyPlans,
   getPhotoLimit,
   listingPlans,
 } from "@/data/monetization";
@@ -51,7 +52,7 @@ describe("listing monetization estimate", () => {
       ],
     });
 
-    expect(estimate).toBe(2475 + 2 * 325 + 1500 + 2100 + 2100 + 5000 + 2800 + 990);
+    expect(estimate).toBe(2475 + 2 * 325 + 990 + 990 + 990 + 1500 + 1200 + 990);
   });
 });
 
@@ -67,6 +68,18 @@ describe("plan photo limits", () => {
     expect(getPhotoLimit("free", true)).toBe(13);
     expect(getPhotoLimit("premium", true)).toBe(20);
     expect(getPhotoLimit("premium-plus", true)).toBe(20);
+  });
+});
+
+describe("agency subscription plans", () => {
+  it("includes Starter and Deluxe with their prices and published features", () => {
+    expect(agencyPlans.map(({ id, pricePerMonth }) => ({ id, pricePerMonth }))).toEqual([
+      { id: "starter", pricePerMonth: 19500 },
+      { id: "deluxe", pricePerMonth: 34500 },
+    ]);
+    expect(agencyPlans[0].features).toContain("30 publicaciones destacadas activas");
+    expect(agencyPlans[1].features).toContain("45 publicaciones Premium activas");
+    expect(agencyPlans[1]).toHaveProperty("badge", "Más vendido ⭐");
   });
 });
 

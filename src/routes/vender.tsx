@@ -4,7 +4,7 @@ import type { ChangeEvent, DragEvent, ReactNode } from "react";
 import { provinces } from "@/data/listings";
 import {
   addOnServices,
-  agencyStarter,
+  agencyPlans,
   calculateListingEstimate,
   getPhotoLimit,
   includedBenefits,
@@ -178,15 +178,18 @@ function CheckOption({
 }
 
 function Vender() {
+  const [activeAudience, setActiveAudience] = useState<"individual" | "agency">("individual");
   const [selectedPlan, setSelectedPlan] = useState<ListingPlanId>("free");
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
   const [selectedPacks, setSelectedPacks] = useState<string[]>([]);
   const [selectedServices, setSelectedServices] = useState<AddOnId[]>([]);
-  const [agencyPlanSelected, setAgencyPlanSelected] = useState(false);
+  const [selectedAgencyPlan, setSelectedAgencyPlan] = useState<(typeof agencyPlans)[number]["id"] | null>(null);
+  const [agencyActionNotice, setAgencyActionNotice] = useState("");
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoError, setPhotoError] = useState("");
   const [mainPhoto, setMainPhoto] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
+  const isAuthenticated = false;
   const hasExtraPhotos = selectedServices.includes("extra-photos");
   const photoLimit = getPhotoLimit(selectedPlan, hasExtraPhotos);
   const estimate = calculateListingEstimate({
@@ -296,12 +299,193 @@ function Vender() {
         </p>
       </header>
 
-      <p role="status" className="mb-6 rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-        La publicación gratuita requiere aprobación y puede tardar entre 1 y 2 horas. El formulario
-        y la publicación estarán disponibles cuando se active el almacenamiento compartido.
-      </p>
+      <section className="mb-8 text-center" aria-label="Tipo de usuario">
+        <div
+          role="tablist"
+          aria-label="Seleccioná tu tipo de usuario"
+          className="mx-auto mb-5 inline-flex max-w-full flex-wrap justify-center gap-1 rounded-full bg-muted p-1"
+        >
+          <button
+            type="button"
+            id="individual-tab"
+            role="tab"
+            aria-selected={activeAudience === "individual"}
+            aria-controls="individual-panel"
+            tabIndex={activeAudience === "individual" ? 0 : -1}
+            onClick={() => setActiveAudience("individual")}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                event.preventDefault();
+                setActiveAudience(activeAudience === "individual" ? "agency" : "individual");
+                event.currentTarget.parentElement
+                  ?.querySelector<HTMLButtonElement>('[role="tab"]:not(:focus)')
+                  ?.focus();
+              }
+            }}
+            className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              activeAudience === "individual"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Particulares
+          </button>
+          <button
+            type="button"
+            id="agency-tab"
+            role="tab"
+            aria-selected={activeAudience === "agency"}
+            aria-controls="agency-panel"
+            tabIndex={activeAudience === "agency" ? 0 : -1}
+            onClick={() => setActiveAudience("agency")}
+            onKeyDown={(event) => {
+              if (event.key === "ArrowRight" || event.key === "ArrowLeft") {
+                event.preventDefault();
+                setActiveAudience(activeAudience === "agency" ? "individual" : "agency");
+                event.currentTarget.parentElement
+                  ?.querySelector<HTMLButtonElement>('[role="tab"]:not(:focus)')
+                  ?.focus();
+              }
+            }}
+            className={`rounded-full px-5 py-2.5 text-sm font-semibold transition-all duration-300 ease-in-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring ${
+              activeAudience === "agency"
+                ? "bg-primary text-primary-foreground shadow-sm"
+                : "bg-transparent text-muted-foreground hover:text-foreground"
+            }`}
+          >
+            Agencias
+          </button>
+        </div>
+        <div className="grid">
+          <div
+            id="individual-panel"
+            role="tabpanel"
+            aria-labelledby="individual-tab"
+            aria-hidden={activeAudience !== "individual"}
+            className={`col-start-1 row-start-1 transition-all duration-300 ease-in-out ${
+              activeAudience === "individual"
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-2 opacity-0"
+            }`}
+          >
+            <h2 className="text-2xl font-bold">Vende tu carro como particular</h2>
+            <p className="mt-2 text-muted-foreground">
+              Publica tu vehículo y llega a miles de compradores en Costa Rica.
+            </p>
+          </div>
+          <div
+            id="agency-panel"
+            role="tabpanel"
+            aria-labelledby="agency-tab"
+            aria-hidden={activeAudience !== "agency"}
+            className={`col-start-1 row-start-1 transition-all duration-300 ease-in-out ${
+              activeAudience === "agency"
+                ? "translate-y-0 opacity-100"
+                : "pointer-events-none translate-y-2 opacity-0"
+            }`}
+          >
+            <h2 className="text-2xl font-bold">Soluciones para agencias</h2>
+            <p className="mt-2 text-muted-foreground">
+              Administra tu inventario y publica múltiples vehículos desde una sola plataforma.
+            </p>
+            {activeAudience === "agency" && (
+              <>
+                <Section
+                  title="Planes para agencias y lotes"
+                  description="Elegí el plan que mejor se adapta a tu inventario."
+                >
+                  <div className="grid gap-4 sm:grid-cols-2" role="radiogroup" aria-label="Planes para agencias">
+                    {agencyPlans.map((plan) => (
+                      <label
+                        key={plan.id}
+                        className={`relative flex cursor-pointer flex-col rounded-2xl border p-5 text-left transition ${
+                          selectedAgencyPlan === plan.id
+                            ? "border-primary bg-secondary/60 ring-2 ring-primary"
+                            : "border-border hover:border-primary/50"
+                        }`}
+                      >
+                        {"badge" in plan && (
+                          <span className="absolute -top-3 right-4 rounded-full bg-primary px-3 py-1 text-xs font-bold text-primary-foreground shadow-sm">
+                            {plan.badge}
+                          </span>
+                        )}
+                        <span className="flex items-start gap-3">
+                          <input
+                            type="radio"
+                            name="agency-plan"
+                            value={plan.id}
+                            checked={selectedAgencyPlan === plan.id}
+                            onChange={() => setSelectedAgencyPlan(plan.id)}
+                            className="mt-1 h-4 w-4 accent-primary"
+                          />
+                          <span className="min-w-0 flex-1">
+                            <span className="flex flex-wrap items-baseline justify-between gap-2 text-lg font-bold">
+                              <span>{plan.name}</span>
+                              <span className="text-primary">
+                                {formatColones(plan.pricePerMonth)} / mes
+                              </span>
+                            </span>
+                            <span className="mt-1 block text-sm text-muted-foreground">{plan.description}</span>
+                          </span>
+                        </span>
+                        <span className="mt-4 grid gap-2 text-sm text-muted-foreground">
+                          {plan.features.map((feature) => (
+                            <span key={feature} className="flex gap-2">
+                              <span aria-hidden="true" className="text-primary">✓</span>
+                              <span>{feature}</span>
+                            </span>
+                          ))}
+                        </span>
+                      </label>
+                    ))}
+                  </div>
+                </Section>
+                <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
+                  {isAuthenticated ? (
+                    <button
+                      type="button"
+                      disabled={!selectedAgencyPlan}
+                      onClick={() => setAgencyActionNotice("Los pagos estarán disponibles cuando se habilite la plataforma de pagos.")}
+                      className="rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Proceder al pago
+                    </button>
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => setAgencyActionNotice("El registro estará disponible cuando se habilite la autenticación.")}
+                        className="rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground shadow-sm transition hover:bg-primary/90"
+                      >
+                        Crear cuenta
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setAgencyActionNotice("El inicio de sesión estará disponible cuando se habilite la autenticación.")}
+                        className="rounded-full border border-border bg-transparent px-6 py-3 font-bold text-foreground transition hover:bg-muted"
+                      >
+                        Login
+                      </button>
+                    </>
+                  )}
+                </div>
+                {agencyActionNotice && (
+                  <p role="status" className="text-center text-sm text-muted-foreground">
+                    {agencyActionNotice}
+                  </p>
+                )}
+              </>
+            )}
+          </div>
+        </div>
+      </section>
 
+      {activeAudience === "individual" && (
       <form onSubmit={(event) => event.preventDefault()} className="space-y-6">
+        <p role="status" className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+          La publicación gratuita requiere aprobación y puede tardar entre 1 y 2 horas. El formulario
+          y la publicación estarán disponibles cuando se active el almacenamiento compartido.
+        </p>
         <Section
           title="Impulsa tu anuncio"
           description="Elegí cómo querés destacar el vehículo. Los precios son un estimado informativo."
@@ -582,29 +766,6 @@ function Vender() {
           </div>
         </Section>
 
-        <Section
-          title="Servicios para agencias y lotes"
-          description="Suscripción mensual para perfiles comerciales."
-        >
-          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-5 hover:bg-muted/60">
-            <input
-              type="checkbox"
-              checked={agencyPlanSelected}
-              onChange={(event) => setAgencyPlanSelected(event.target.checked)}
-              className="mt-1 h-4 w-4 accent-primary"
-            />
-            <span className="grid gap-2">
-              <span className="flex flex-wrap items-baseline justify-between gap-3 text-lg font-bold">
-                {agencyStarter.name}
-                <span className="text-primary">{formatColones(agencyStarter.pricePerMonth)} / mes</span>
-              </span>
-              <span className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
-                {agencyStarter.features.map((feature) => <span key={feature}>✓ {feature}</span>)}
-              </span>
-            </span>
-          </label>
-        </Section>
-
         <Section title="Beneficios incluidos para todos">
           <ul className="grid gap-2 sm:grid-cols-2">
             {includedBenefits.map((benefit) => (
@@ -656,10 +817,16 @@ function Vender() {
               <dt>Total estimado por anuncio</dt>
               <dd>{formatColones(estimate)}</dd>
             </div>
-            {agencyPlanSelected && (
+            {selectedAgencyPlan && (
               <div className="flex justify-between gap-4 text-sm">
-                <dt>{agencyStarter.name} (mensual)</dt>
-                <dd className="font-semibold">{formatColones(agencyStarter.pricePerMonth)} / mes</dd>
+                <dt>
+                  Plan Agencia {agencyPlans.find((plan) => plan.id === selectedAgencyPlan)?.name} (mensual)
+                </dt>
+                <dd className="font-semibold">
+                  {formatColones(
+                    agencyPlans.find((plan) => plan.id === selectedAgencyPlan)?.pricePerMonth ?? 0,
+                  )} / mes
+                </dd>
               </div>
             )}
           </dl>
@@ -778,6 +945,7 @@ function Vender() {
           Publicar anuncio (próximamente)
         </button>
       </form>
+      )}
     </main>
   );
 }
