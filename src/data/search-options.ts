@@ -11,11 +11,9 @@ export type Filters = {
 };
 
 const str = (v: unknown) => (typeof v === "string" ? v : typeof v === "number" ? String(v) : undefined);
-export const parseFilters = (s: Record<string, unknown>): Filters => ({
-  q: str(s.q), make: str(s.make), model: str(s.model), year: str(s.year), condition: str(s.condition),
-  style: str(s.style), fuel: str(s.fuel), transmission: str(s.transmission), financing: str(s.financing),
-  trade: str(s.trade), province: str(s.province), doors: str(s.doors), sort: str(s.sort),
-});
+export const parseFilters = (s: Record<string, unknown>): Filters =>
+  Object.fromEntries(["q", "make", "model", "year", "condition", "style", "fuel", "transmission", "financing", "trade", "province", "doors", "sort"]
+    .flatMap((key) => { const value = str(s[key]); return value === undefined ? [] : [[key, value]]; }));
 
 const norm = (s: string) => s.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
 
