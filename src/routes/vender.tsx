@@ -492,6 +492,20 @@ function Vender() {
           description={`Opcionales: ${formatColones(tagPrice)} cada una, o elegí un paquete.`}
         >
           <div className="grid gap-3 sm:grid-cols-2">
+            <label
+              className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${
+                selectedPack === null ? "border-primary bg-secondary/60" : "border-border hover:bg-muted/60"
+              }`}
+            >
+              <input
+                type="radio"
+                name="tag-pack"
+                checked={selectedPack === null}
+                onChange={() => setSelectedPack(null)}
+                className="mt-1 h-4 w-4 accent-primary"
+              />
+              <span className="font-semibold">No agregar pack de etiquetas</span>
+            </label>
             {tagPacks.map((pack) => (
               <label
                 key={pack.id}

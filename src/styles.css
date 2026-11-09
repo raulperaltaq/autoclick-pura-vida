@@ -116,6 +116,12 @@
   --sidebar-ring: oklch(0.704 0.04 256.788);
 }
 
+@media (max-width: 767px) {
+  html {
+    overflow-x: clip;
+  }
+}
+
 @layer base {
   * {
     border-color: var(--color-border);
