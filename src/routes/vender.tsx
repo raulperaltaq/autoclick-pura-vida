@@ -2,6 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, ReactNode } from "react";
 import { provinces } from "@/data/listings";
+import {
+  addOnServices,
+  agencyStarter,
+  calculateListingEstimate,
+  getPhotoLimit,
+  includedBenefits,
+  listingPlans,
+  paidTags,
+  tagPacks,
+  tagPrice,
+} from "@/data/monetization";
+import type { AddOnId, ListingPlanId } from "@/data/monetization";
 import { styles } from "@/data/search-options";
 
 export const Route = createFileRoute("/vender")({
@@ -60,16 +72,17 @@ const extras = [
   "Volante ajustable",
   "Bluetooth",
 ];
-const tags = [
-  "Ganga",
-  "Poco kilometraje",
-  "Como nuevo",
-  "Un solo dueño",
-  "Financio",
-  "Urge vender",
-];
 const transmissionOptions = ["Manual", "Automática", "CVT", "Doble embrague"];
 const fuelOptions = ["Gasolina", "Diesel", "Híbrido", "Eléctrico"];
+
+const formatColones = (amount: number) =>
+  `₡${new Intl.NumberFormat("es-CR", { maximumFractionDigits: 0 }).format(amount).replace(/[,\u00a0]/g, ".")}`;
+
+const getPhotoError = (count: number, limit: number) => {
+  if (count < 2) return "Seleccioná al menos 2 fotos.";
+  if (count > limit) return `El plan seleccionado permite hasta ${limit} fotos.`;
+  return "";
+};
 
 function RequiredMark() {
   return <span aria-hidden="true" className="ml-1 text-destructive">*</span>;
@@ -121,7 +134,7 @@ function SelectField({
   label,
   options,
   placeholder = "Seleccioná una opción",
-  className,
+  className = "",
 }: {
   label: string;
   options: string[];
@@ -142,46 +155,80 @@ function SelectField({
   );
 }
 
-function CheckOption({ label }: { label: string }) {
+function CheckOption({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked?: boolean;
+  onChange?: (checked: boolean) => void;
+}) {
   return (
     <label className="flex items-start gap-2 rounded-lg border border-border p-3 text-sm font-medium hover:bg-muted/60">
-      <input type="checkbox" className="mt-0.5 h-4 w-4 accent-primary" />
+      <input
+        type="checkbox"
+        checked={checked}
+        onChange={onChange ? (event) => onChange(event.target.checked) : undefined}
+        className="mt-0.5 h-4 w-4 accent-primary"
+      />
       <span>{label}</span>
     </label>
   );
 }
 
 function Vender() {
+  const [selectedPlan, setSelectedPlan] = useState<ListingPlanId>("free");
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [selectedPack, setSelectedPack] = useState<string | null>(null);
+  const [selectedServices, setSelectedServices] = useState<AddOnId[]>([]);
+  const [agencyPlanSelected, setAgencyPlanSelected] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoError, setPhotoError] = useState("");
   const [mainPhoto, setMainPhoto] = useState(0);
   const fileInput = useRef<HTMLInputElement>(null);
+  const hasExtraPhotos = selectedServices.includes("extra-photos");
+  const photoLimit = getPhotoLimit(selectedPlan, hasExtraPhotos);
+  const estimate = calculateListingEstimate({
+    plan: selectedPlan,
+    selectedTags,
+    selectedPacks: selectedPack ? [selectedPack] : [],
+    selectedServices,
+  });
+  const selectedPackTags = new Set<string>(
+    tagPacks
+      .filter((pack) => pack.id === selectedPack)
+      .flatMap((pack) => pack.tags),
+  );
+  const selectedPackOption = tagPacks.find((pack) => pack.id === selectedPack);
+  const selectedTagIds = new Set([...selectedTags, ...selectedPackTags]);
   const photoPreviews = useMemo(
     () => photos.map((file) => ({ file, url: URL.createObjectURL(file) })),
     [photos],
   );
 
   useEffect(() => () => photoPreviews.forEach(({ url }) => URL.revokeObjectURL(url)), [photoPreviews]);
+  useEffect(() => {
+    const error = getPhotoError(photos.length, photoLimit);
+    setPhotoError(error);
+    fileInput.current?.setCustomValidity(error);
+  }, [photos.length, photoLimit]);
 
   const updatePhotos = (files: FileList | File[]) => {
     const selected = Array.from(files);
     const images = selected.filter((file) => file.type.startsWith("image/"));
-    let error = "";
-
     if (images.length !== selected.length) {
-      error = "Solo se permiten archivos de imagen.";
-    } else if (images.length < 2) {
-      error = "Seleccioná al menos 2 fotos.";
-    } else if (images.length > 4) {
-      error = "Para un anuncio gratuito, podés seleccionar un máximo de 4 fotos.";
+      const error = "Solo se permiten archivos de imagen.";
+      setPhotoError(error);
+      fileInput.current?.setCustomValidity(error);
+      return;
     }
 
-    setPhotos(images.slice(0, 4));
+    setPhotos(images.slice(0, 20));
     setMainPhoto(0);
+    const error = getPhotoError(images.length, photoLimit);
     setPhotoError(error);
-    if (fileInput.current) {
-      fileInput.current.setCustomValidity(error);
-    }
+    fileInput.current?.setCustomValidity(error);
   };
 
   const onPhotoChange = (event: ChangeEvent<HTMLInputElement>) => {
@@ -203,7 +250,7 @@ function Vender() {
     const remaining = photos.filter((_, photoIndex) => photoIndex !== index);
     setPhotos(remaining);
     setMainPhoto((current) => (current === index ? 0 : current > index ? current - 1 : current));
-    const error = remaining.length < 2 ? "Seleccioná al menos 2 fotos." : "";
+    const error = getPhotoError(remaining.length, photoLimit);
     setPhotoError(error);
 
     if (fileInput.current) {
@@ -214,10 +261,31 @@ function Vender() {
     }
   };
 
+  const toggleTag = (tagId: string, checked: boolean) => {
+    setSelectedTags((current) =>
+      checked ? [...new Set([...current, tagId])] : current.filter((id) => id !== tagId),
+    );
+  };
+
+  const toggleService = (serviceId: AddOnId, checked: boolean) => {
+    setSelectedServices((current) => {
+      const boostIds: AddOnId[] = ["boost-7-days", "boost-30-days"];
+      const withoutBoosts = current.filter((id) => !boostIds.includes(id));
+
+      if (boostIds.includes(serviceId)) {
+        return checked ? [...withoutBoosts, serviceId] : current.filter((id) => id !== serviceId);
+      }
+
+      return checked ? [...new Set([...current, serviceId])] : current.filter((id) => id !== serviceId);
+    });
+  };
+
   return (
     <main className="mx-auto max-w-4xl px-4 py-10 sm:py-14">
       <header className="mb-8">
-        <p className="text-sm font-bold uppercase tracking-wide text-primary">Anuncio gratuito</p>
+        <p className="text-sm font-bold uppercase tracking-wide text-primary">
+          {listingPlans.find((plan) => plan.id === selectedPlan)?.name}
+        </p>
         <h1 className="mt-2 text-4xl font-extrabold">Publicá tu vehículo</h1>
         <p className="mt-2 max-w-2xl text-muted-foreground">
           Completá la información del vehículo y tus datos para que las personas interesadas
@@ -229,11 +297,85 @@ function Vender() {
       </header>
 
       <p role="status" className="mb-6 rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-        El formulario estará disponible para publicar cuando se active el almacenamiento
-        compartido. Los anuncios se publicarán sin revisión de la plataforma.
+        La publicación gratuita requiere aprobación y puede tardar entre 1 y 2 horas. El formulario
+        y la publicación estarán disponibles cuando se active el almacenamiento compartido.
       </p>
 
       <form onSubmit={(event) => event.preventDefault()} className="space-y-6">
+        <Section
+          title="Impulsa tu anuncio"
+          description="Elegí cómo querés destacar el vehículo. Los precios son un estimado informativo."
+        >
+          <div className="grid gap-4 md:grid-cols-2">
+            {listingPlans.map((plan) => (
+              <label
+                key={plan.id}
+                className={`relative flex cursor-pointer flex-col rounded-2xl border p-5 transition ${
+                  selectedPlan === plan.id
+                    ? "border-primary bg-secondary/60 ring-2 ring-primary"
+                    : "border-border hover:border-primary/50"
+                }`}
+              >
+                <span className="flex items-start justify-between gap-3">
+                  <span className="flex items-center gap-2 text-lg font-bold">
+                    <input
+                      type="radio"
+                      name="listing-plan"
+                      value={plan.id}
+                      checked={selectedPlan === plan.id}
+                      onChange={() => setSelectedPlan(plan.id)}
+                      className="h-4 w-4 accent-primary"
+                    />
+                    <span>{plan.icon} {plan.name}</span>
+                  </span>
+                  <span className="grid justify-items-end gap-2">
+                    <span className="flex flex-wrap items-baseline justify-end gap-x-2">
+                      {"previousPrice" in plan && (
+                        <span className="text-sm font-medium text-muted-foreground line-through">
+                          {formatColones(plan.previousPrice)}
+                        </span>
+                      )}
+                      <span className="shrink-0 text-lg font-extrabold">{formatColones(plan.price)}</span>
+                    </span>
+                    {"discountLabel" in plan && (
+                      <span className="rounded-full bg-destructive/10 px-2.5 py-1 text-xs font-bold text-destructive">
+                        {plan.discountLabel}
+                      </span>
+                    )}
+                  </span>
+                </span>
+                <span className="mt-2 text-sm text-muted-foreground">{plan.tagline}</span>
+                <ul className="mt-4 grid gap-2 text-sm">
+                  {plan.features.map((feature) => (
+                    <li key={feature} className="flex gap-2">
+                      <span
+                        aria-hidden="true"
+                        className={feature.startsWith("Requiere aprobación") ? "font-bold text-destructive" : "text-primary"}
+                      >
+                        {feature.startsWith("Requiere aprobación") ? "✕" : "✓"}
+                      </span>
+                      <span>{feature}</span>
+                    </li>
+                  ))}
+                  {plan.id === "featured" && (
+                    <li className="flex gap-2 text-muted-foreground">
+                      <span aria-hidden="true">↗</span>
+                      <span>Objetivo promocional: hasta 3 veces más visualizaciones</span>
+                    </li>
+                  )}
+                </ul>
+              </label>
+            ))}
+          </div>
+          <p className="mt-5 rounded-xl bg-muted p-4 text-sm text-muted-foreground">
+            Seleccionar opciones solo calcula un estimado: todavía no se realizan cobros ni se
+            activan promociones. La publicación gratuita requiere aprobación y tarda entre 1 y 2
+            horas; Premium Plus ofrece publicación automática inmediata según el plan. Los
+            beneficios de pago estarán disponibles cuando se habiliten pagos y almacenamiento;
+            servicios como inspección y difusión requieren además su operación correspondiente.
+          </p>
+        </Section>
+
         <Section title="Información del vehículo" description="Los datos principales que verá quien busque tu vehículo.">
           <div className="grid gap-4 sm:grid-cols-2">
             <Field label="Marca" required>
@@ -345,10 +487,167 @@ function Vender() {
           </div>
         </Section>
 
-        <Section title="Etiquetas del anuncio" description="Elegí las características que mejor describen el vehículo.">
-          <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-            {tags.map((tag) => <CheckOption key={tag} label={tag} />)}
+        <Section
+          title="Etiquetas destacadas"
+          description={`Opcionales: ${formatColones(tagPrice)} cada una, o elegí un paquete.`}
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            {tagPacks.map((pack) => (
+              <label
+                key={pack.id}
+                className={`flex cursor-pointer items-start gap-3 rounded-xl border p-4 ${
+                  selectedPack === pack.id ? "border-primary bg-secondary/60" : "border-border hover:bg-muted/60"
+                }`}
+              >
+                <input
+                  type="radio"
+                  name="tag-pack"
+                  checked={selectedPack === pack.id}
+                  onChange={() => setSelectedPack(pack.id)}
+                  className="mt-1 h-4 w-4 accent-primary"
+                />
+                <span className="grid gap-1">
+                  <span className="font-semibold">{pack.name} — {formatColones(pack.price)}</span>
+                  <span className="text-sm text-muted-foreground">
+                    {pack.tags
+                      .map((id) => paidTags.find((tag) => tag.id === id)?.name)
+                      .filter(Boolean)
+                      .join(" · ")}
+                  </span>
+                </span>
+              </label>
+            ))}
           </div>
+          <div className="mt-5 grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+            {paidTags.map((tag) => (
+              <CheckOption
+                key={tag.id}
+                label={`${tag.icon} ${tag.name} — ${formatColones(tagPrice)}`}
+                checked={selectedTagIds.has(tag.id)}
+                onChange={(checked) => toggleTag(tag.id, checked)}
+              />
+            ))}
+          </div>
+        </Section>
+
+        <Section
+          title="Servicios adicionales"
+          description="Opcionales para darle más exposición a tu anuncio."
+        >
+          <div className="grid gap-3 sm:grid-cols-2">
+            {addOnServices.map((service) => {
+              const isSelected = selectedServices.includes(service.id);
+              const isBoost = service.id === "boost-7-days" || service.id === "boost-30-days";
+
+              return (
+                <label
+                  key={service.id}
+                  className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-4 hover:bg-muted/60"
+                >
+                  <input
+                    type={isBoost ? "radio" : "checkbox"}
+                    name={isBoost ? "listing-boost" : undefined}
+                    checked={isSelected}
+                    onChange={(event) => toggleService(service.id, event.target.checked)}
+                    className="mt-1 h-4 w-4 accent-primary"
+                  />
+                  <span className="grid gap-1">
+                    <span className="flex flex-wrap items-baseline justify-between gap-2 font-semibold">
+                      {service.name}
+                      <span className="font-extrabold text-primary">{formatColones(service.price)}</span>
+                    </span>
+                    <span className="text-sm text-muted-foreground">{service.description}</span>
+                  </span>
+                </label>
+              );
+            })}
+          </div>
+        </Section>
+
+        <Section
+          title="Servicios para agencias y lotes"
+          description="Suscripción mensual para perfiles comerciales."
+        >
+          <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-border p-5 hover:bg-muted/60">
+            <input
+              type="checkbox"
+              checked={agencyPlanSelected}
+              onChange={(event) => setAgencyPlanSelected(event.target.checked)}
+              className="mt-1 h-4 w-4 accent-primary"
+            />
+            <span className="grid gap-2">
+              <span className="flex flex-wrap items-baseline justify-between gap-3 text-lg font-bold">
+                {agencyStarter.name}
+                <span className="text-primary">{formatColones(agencyStarter.pricePerMonth)} / mes</span>
+              </span>
+              <span className="grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
+                {agencyStarter.features.map((feature) => <span key={feature}>✓ {feature}</span>)}
+              </span>
+            </span>
+          </label>
+        </Section>
+
+        <Section title="Beneficios incluidos para todos">
+          <ul className="grid gap-2 sm:grid-cols-2">
+            {includedBenefits.map((benefit) => (
+              <li key={benefit} className="flex gap-2 text-sm">
+                <span aria-hidden="true" className="text-primary">✓</span>
+                <span>{benefit}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Estos beneficios y los servicios promocionales se activarán al habilitar la plataforma
+            de pagos y la gestión de anuncios.
+          </p>
+        </Section>
+
+        <Section title="Resumen estimado">
+          <dl className="grid gap-2 text-sm">
+            <div className="flex justify-between gap-4">
+              <dt>{listingPlans.find((plan) => plan.id === selectedPlan)?.name}</dt>
+              <dd className="font-semibold">{formatColones(listingPlans.find((plan) => plan.id === selectedPlan)?.price ?? 0)}</dd>
+            </div>
+            {selectedPackOption && (
+              <div className="flex justify-between gap-4">
+                <dt>{selectedPackOption.name}</dt>
+                <dd className="font-semibold">{formatColones(selectedPackOption.price)}</dd>
+              </div>
+            )}
+            {selectedTags
+              .filter((tagId) => !selectedPackTags.has(tagId))
+              .map((tagId) => {
+                const tag = paidTags.find((option) => option.id === tagId);
+                return tag ? (
+                  <div key={tag.id} className="flex justify-between gap-4">
+                    <dt>Etiqueta: {tag.name}</dt>
+                    <dd className="font-semibold">{formatColones(tagPrice)}</dd>
+                  </div>
+                ) : null;
+              })}
+            {selectedServices.map((serviceId) => {
+              const service = addOnServices.find((option) => option.id === serviceId);
+              return service ? (
+                <div key={service.id} className="flex justify-between gap-4">
+                  <dt>{service.name}</dt>
+                  <dd className="font-semibold">{formatColones(service.price)}</dd>
+                </div>
+              ) : null;
+            })}
+            <div className="mt-2 flex justify-between border-t border-border pt-3 text-base font-extrabold">
+              <dt>Total estimado por anuncio</dt>
+              <dd>{formatColones(estimate)}</dd>
+            </div>
+            {agencyPlanSelected && (
+              <div className="flex justify-between gap-4 text-sm">
+                <dt>{agencyStarter.name} (mensual)</dt>
+                <dd className="font-semibold">{formatColones(agencyStarter.pricePerMonth)} / mes</dd>
+              </div>
+            )}
+          </dl>
+          <p className="mt-4 text-sm text-muted-foreground">
+            Estimado informativo; no se procesan pagos en este momento.
+          </p>
         </Section>
 
         <Section title="Información del vendedor" description="Estos datos se mostrarán para que te contacten directamente.">
@@ -385,7 +684,7 @@ function Vender() {
 
         <Section
           title="Imágenes"
-          description="Agregá de 2 a 4 fotos para un anuncio gratuito. La primera será la foto principal; podés cambiarla antes de publicar."
+          description={`Este plan permite hasta ${photoLimit} fotos. La primera será la principal; podés cambiarla antes de publicar.`}
         >
           <div
             onDragOver={(event) => event.preventDefault()}
@@ -403,16 +702,19 @@ function Vender() {
               type="file"
               accept="image/*"
               multiple
+              max={photoLimit}
               aria-describedby="photo-requirements"
               className="mx-auto mt-4 block max-w-full text-sm file:mr-3 file:rounded-full file:border-0 file:bg-secondary file:px-4 file:py-2 file:font-semibold file:text-secondary-foreground"
               onChange={onPhotoChange}
             />
             <p id="photo-requirements" aria-live="polite" className="mt-3 text-sm text-muted-foreground">
               {photos.length === 0
-                ? "Mínimo 2 y máximo 4 fotos."
-                : `${photos.length} de 4 fotos seleccionadas.`}
+                ? `Mínimo 2 y máximo ${photoLimit} fotos.`
+                : `${photos.length} de ${photoLimit} fotos seleccionadas.`}
             </p>
-            {photoError && <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{photoError}</p>}
+            {photoError && photos.length > 0 && (
+              <p role="alert" className="mt-2 text-sm font-semibold text-destructive">{photoError}</p>
+            )}
           </div>
           {photoPreviews.length > 0 && (
             <div className="mt-5 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
@@ -448,7 +750,7 @@ function Vender() {
         </Section>
 
         <div className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
-          La publicación gratuita admite de 2 a 4 fotos. La publicación y el guardado del formulario estarán disponibles al activar el almacenamiento compartido.
+          El límite de fotos depende del plan seleccionado: 3 gratis, 6 Destacado, 10 Premium y hasta 10 adicionales con el servicio de fotografías extra. La publicación y los pagos estarán disponibles al activar el almacenamiento y la plataforma de pagos.
         </div>
         <button
           type="submit"
