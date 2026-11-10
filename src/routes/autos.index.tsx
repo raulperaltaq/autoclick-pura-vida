@@ -3,7 +3,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { listings } from "@/data/listings";
 import { fetchListings } from "@/data/listings-repository";
-import { applyFilters, parseFilters, type Filters } from "@/data/search-options";
+import {
+  applyFilters,
+  MAX_SEARCH_RESULTS,
+  parseFilters,
+  type Filters,
+} from "@/data/search-options";
 import { ListingCard } from "@/components/listing-card";
 import { VehicleSearchForm } from "@/components/vehicle-search-form";
 
@@ -40,6 +45,7 @@ function AutosPage() {
     () => applyFilters(listingsQuery.data, search),
     [listingsQuery.data, search],
   );
+  const visibleResults = results.slice(0, MAX_SEARCH_RESULTS);
   const submit = (filters: Filters) => {
     const clean = Object.fromEntries(
       Object.entries(filters).filter(([, value]) => value),
@@ -65,10 +71,14 @@ function AutosPage() {
       >
         Búsqueda avanzada
       </Link>
-      <p className="mt-4 text-sm text-muted-foreground">{results.length} resultados</p>
-      {results.length ? (
+      <p className="mt-4 text-sm text-muted-foreground">
+        {results.length > MAX_SEARCH_RESULTS
+          ? `Mostrando los primeros ${MAX_SEARCH_RESULTS} de ${results.length} resultados`
+          : `${results.length} resultados`}
+      </p>
+      {visibleResults.length ? (
         <div className="mt-6 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {results.map((l) => (
+          {visibleResults.map((l) => (
             <ListingCard key={l.id} listing={l} />
           ))}
         </div>

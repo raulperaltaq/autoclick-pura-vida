@@ -77,8 +77,14 @@ const listingPlanPriority: Record<ListingPlanId, number> = {
   free: 3,
 };
 
-export function sortListingsByPlanPriority(listings: Listing[]): Listing[] {
-  return [...listings].sort((a, b) => listingPlanPriority[a.plan] - listingPlanPriority[b.plan]);
+export function sortListingsByPlanPriority(
+  listings: Listing[],
+  compareWithinPlan?: (a: Listing, b: Listing) => number,
+): Listing[] {
+  return [...listings].sort(
+    (a, b) =>
+      listingPlanPriority[a.plan] - listingPlanPriority[b.plan] || compareWithinPlan?.(a, b) || 0,
+  );
 }
 
 export function sortListingsByPublishDate(listings: Listing[]): Listing[] {

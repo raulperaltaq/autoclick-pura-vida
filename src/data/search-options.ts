@@ -39,6 +39,8 @@ export type Filters = {
   sort?: string;
 };
 
+export const MAX_SEARCH_RESULTS = 10;
+
 const str = (v: unknown) =>
   typeof v === "string" ? v : typeof v === "number" ? String(v) : undefined;
 export const parseFilters = (s: Record<string, unknown>): Filters =>
@@ -74,7 +76,7 @@ export function applyFilters(all: Listing[], f: Filters) {
     .split(/\s+/)
     .filter((w) => w.length > 1 && !["en", "de", "con", "un", "una"].includes(w));
   const minYear = Number(f.year) || 0;
-  let r = all.filter((l) => {
+  const r = all.filter((l) => {
     const hay = norm(
       `${l.make} ${l.model} ${l.year} ${l.fuel} ${l.style} ${l.province} ${l.transmission}`,
     );
@@ -100,7 +102,5 @@ export function applyFilters(all: Listing[], f: Filters) {
     make: (a, b) => a.make.localeCompare(b.make),
     model: (a, b) => a.model.localeCompare(b.model),
   };
-  if (f.sort && by[f.sort]) r = [...r].sort(by[f.sort]);
-  else r = sortListingsByPlanPriority(r);
-  return r;
+  return sortListingsByPlanPriority(r, by[f.sort]);
 }
