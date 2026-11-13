@@ -102,5 +102,5 @@ export function applyFilters(all: Listing[], f: Filters) {
     make: (a, b) => a.make.localeCompare(b.make),
     model: (a, b) => a.model.localeCompare(b.model),
   };
-  return sortListingsByPlanPriority(r, by[f.sort]);
+  return sortListingsByPlanPriority(r, by[f.sort ?? "price"] ?? by["price"]);
 }

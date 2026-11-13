@@ -108,6 +108,111 @@ export type Database = {
           },
         ]
       }
+      listings: {
+        Row: {
+          body: string
+          condition: string
+          created_at: string
+          currency: string
+          description: string
+          details: Json
+          doors: number | null
+          financing: boolean | null
+          fuel: string
+          id: string
+          image_url: string
+          image_urls: string[]
+          km: number | null
+          make: string
+          model: string
+          owner_id: string
+          phone: string
+          plan: string
+          price: number
+          province: string
+          published_at: string | null
+          requested_plan: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          seller: string
+          status: string
+          style: string
+          trade: boolean | null
+          transmission: string
+          updated_at: string
+          whatsapp_enabled: boolean
+          year: number
+        }
+        Insert: {
+          body: string
+          condition: string
+          created_at?: string
+          currency: string
+          description?: string
+          details?: Json
+          doors?: number | null
+          financing?: boolean | null
+          fuel: string
+          id?: string
+          image_url: string
+          image_urls: string[]
+          km?: number | null
+          make: string
+          model: string
+          owner_id: string
+          phone: string
+          plan?: string
+          price: number
+          province: string
+          published_at?: string | null
+          requested_plan?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seller?: string
+          status?: string
+          style: string
+          trade?: boolean | null
+          transmission: string
+          updated_at?: string
+          whatsapp_enabled?: boolean
+          year: number
+        }
+        Update: {
+          body?: string
+          condition?: string
+          created_at?: string
+          currency?: string
+          description?: string
+          details?: Json
+          doors?: number | null
+          financing?: boolean | null
+          fuel?: string
+          id?: string
+          image_url?: string
+          image_urls?: string[]
+          km?: number | null
+          make?: string
+          model?: string
+          owner_id?: string
+          phone?: string
+          plan?: string
+          price?: number
+          province?: string
+          published_at?: string | null
+          requested_plan?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          seller?: string
+          status?: string
+          style?: string
+          trade?: boolean | null
+          transmission?: string
+          updated_at?: string
+          whatsapp_enabled?: boolean
+          year?: number
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string
@@ -157,6 +262,15 @@ export type Database = {
     Functions: {
       add_agency_member: { Args: { member_id: string }; Returns: undefined }
       create_my_agency: { Args: { agency_name: string }; Returns: string }
+      current_user_has_role: {
+        Args: { p_role: Database["public"]["Enums"]["app_role"] }
+        Returns: boolean
+      }
+      is_valid_listing_details: { Args: { p_details: Json }; Returns: boolean }
+      review_listing: {
+        Args: { p_approved: boolean; p_listing_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "seller" | "agency" | "admin"
