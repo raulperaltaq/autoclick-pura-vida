@@ -7,10 +7,11 @@ describe("role-based account routing", () => {
     expect(getAccountHomeRoute("agency")).toBe("/dashboard/agencia");
   });
 
-  it.each(["buyer", "seller", "admin"] as const)(
-    "sends %s accounts to the personal account",
-    (role) => {
-      expect(getAccountHomeRoute(role)).toBe("/mi-cuenta");
-    },
-  );
+  it.each(["buyer", "seller"] as const)("sends %s accounts to their vehicles", (role) => {
+    expect(getAccountHomeRoute(role)).toBe("/mis-vehiculos");
+  });
+
+  it("keeps admin accounts on the account page until an admin dashboard exists", () => {
+    expect(getAccountHomeRoute("admin")).toBe("/mi-cuenta");
+  });
 });
