@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState, type FormEvent } from "react";
 import { supabase } from "@/lib/supabase";
 import { Button } from "@/components/ui/button";
-import { accountHead } from "@/lib/account";
+import { accountHead, isPasswordRecoveryFlow } from "@/lib/account";
 export const Route = createFileRoute("/reset-password")({
   head: () =>
     accountHead(
@@ -14,15 +14,26 @@ export const Route = createFileRoute("/reset-password")({
 function ResetPassword() {
   const navigate = useNavigate();
   const [recovery, setRecovery] = useState(false);
+  const [canChangePassword, setCanChangePassword] = useState(false);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    setRecovery(
-      new URLSearchParams(window.location.hash.slice(1)).get("type") === "recovery" ||
-        sessionStorage.getItem("password-recovery") === "true",
-    );
+    const isRecovery = isPasswordRecoveryFlow(window.location.hash, window.sessionStorage);
+    setRecovery(isRecovery);
+    if (!supabase || isRecovery) {
+      setCanChangePassword(false);
+      return;
+    }
+
+    void supabase.auth.getUser().then(({ data, error }) => {
+      if (error) {
+        setCanChangePassword(false);
+        return;
+      }
+      setCanChangePassword(Boolean(data.user));
+    });
   }, []);
   async function submit(e: FormEvent) {
     e.preventDefault();
@@ -52,7 +63,7 @@ function ResetPassword() {
   return (
     <main className="mx-auto max-w-md px-4 py-16">
       <h1 className="text-3xl font-bold">Nueva contraseña</h1>
-      {recovery ? (
+      {recovery || canChangePassword ? (
         <form onSubmit={submit} className="mt-6 space-y-4">
           <label className="block">
             Contraseña

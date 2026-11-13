@@ -1,5 +1,5 @@
 # Manejo de sesiones
-- [ ] Acceso, registro, recuperación y cierre de sesión.
-- [ ] Perfiles, roles protegidos y membresías de agencia.
-- [ ] Menú por sesión, favoritos y páginas privadas.
-- [ ] Verificación de permisos y recorrido real.
+- [x] Acceso, registro, recuperación y cierre de sesión.
+- [x] Perfiles, roles protegidos y membresías de agencia.
+- [x] Menú por sesión, favoritos y páginas privadas.
+- [x] Verificación de permisos y recorrido real.

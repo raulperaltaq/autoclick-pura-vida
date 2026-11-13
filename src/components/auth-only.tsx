@@ -1,6 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "@tanstack/react-router";
-import type { AccountRole } from "@/lib/account-roles";
+import { getLoginRoleForAccess, hasAllowedRole, type AccountRole } from "@/lib/account-roles";
 import { useAuth } from "@/lib/use-auth";
 
 export function AuthOnly({
@@ -31,7 +31,7 @@ export function AuthOnly({
       >
         <Link
           to="/acceder"
-          search={{ mode: "login", role: allowedRoles?.includes("agency") ? "agency" : "seller" }}
+          search={{ mode: "login", role: getLoginRoleForAccess(allowedRoles) }}
           className="mt-5 inline-flex rounded-full bg-primary px-5 py-2.5 font-bold text-primary-foreground"
         >
           Acceder
@@ -47,7 +47,7 @@ export function AuthOnly({
       />
     );
   }
-  if (allowedRoles && !allowedRoles.includes(profile.role)) {
+  if (allowedRoles && !hasAllowedRole(profile.role, allowedRoles)) {
     return (
       <AccessMessage
         title="Acceso no disponible"

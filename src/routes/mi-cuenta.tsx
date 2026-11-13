@@ -51,9 +51,17 @@ function MyAccountPage() {
           ))}
         </div>
 
-        <Link to="/autos" search={{ q: "" }} className="mt-8 inline-flex rounded-full border border-border px-5 py-2.5 font-semibold hover:bg-muted">
-          Seguir explorando vehículos
-        </Link>
+        <div className="mt-8 flex flex-wrap gap-3">
+          <Link
+            to="/reset-password"
+            className="inline-flex rounded-full border border-border px-5 py-2.5 font-semibold hover:bg-muted"
+          >
+            Cambiar contraseña
+          </Link>
+          <Link to="/autos" search={{ q: "" }} className="inline-flex rounded-full border border-border px-5 py-2.5 font-semibold hover:bg-muted">
+            Seguir explorando vehículos
+          </Link>
+        </div>
       </main>
     </AuthOnly>
   );

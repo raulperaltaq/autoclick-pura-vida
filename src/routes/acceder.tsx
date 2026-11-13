@@ -2,7 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { FormEvent } from "react";
 import { getAccountHomeRoute } from "@/lib/account-roles";
-import { safeReturnPath } from "@/lib/account";
+import { buildPasswordResetUrl, safeReturnPath } from "@/lib/account";
 import { supabase } from "@/lib/supabase";
 import { useAuth } from "@/lib/use-auth";
 
@@ -37,6 +37,7 @@ function AccessPage() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [passwordResetSent, setPasswordResetSent] = useState(false);
   const [message, setMessage] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
   const [oauthProvisioning, setOauthProvisioning] = useState(false);
@@ -120,6 +121,7 @@ function AccessPage() {
     event.preventDefault();
     setMessage("");
     setErrorMessage("");
+    setPasswordResetSent(false);
 
     if (!supabase) {
       setErrorMessage(
@@ -158,6 +160,41 @@ function AccessPage() {
       console.error("Authentication request failed:", error);
       setErrorMessage(
         error instanceof Error ? error.message : "No se pudo completar la autenticación.",
+      );
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    const normalizedEmail = email.trim();
+    if (!normalizedEmail) {
+      setErrorMessage("Ingresá tu correo para recibir el enlace de recuperación.");
+      return;
+    }
+    if (!supabase) {
+      setErrorMessage(
+        "La autenticación no está configurada. Conectá Supabase desde Lovable para continuar.",
+      );
+      return;
+    }
+
+    setMessage("");
+    setErrorMessage("");
+    setPasswordResetSent(false);
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+        redirectTo: buildPasswordResetUrl(window.location.origin),
+      });
+      if (error) throw error;
+      sessionStorage.setItem("password-recovery", "true");
+      setPasswordResetSent(true);
+      setMessage("Te enviamos un correo con el enlace para restablecer tu contraseña.");
+    } catch (error) {
+      console.error("Password reset request failed:", error);
+      setErrorMessage(
+        error instanceof Error ? error.message : "No se pudo enviar el correo de recuperación.",
       );
     } finally {
       setIsSubmitting(false);
@@ -297,6 +334,16 @@ function AccessPage() {
               <span className="font-normal text-muted-foreground">Usá al menos 8 caracteres.</span>
             )}
           </label>
+          {mode === "login" && (
+            <button
+              type="button"
+              onClick={() => void handlePasswordReset()}
+              disabled={!isConfigured || isSubmitting || isLoading}
+              className="-mt-1 text-left text-sm font-semibold text-primary hover:underline disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              ¿Olvidaste tu contraseña?
+            </button>
+          )}
           <button
             type="submit"
             disabled={!isConfigured || isSubmitting || isLoading}
@@ -332,6 +379,11 @@ function AccessPage() {
         {message && (
           <p role="status" className="mt-4 text-sm text-primary">
             {message}
+          </p>
+        )}
+        {passwordResetSent && (
+          <p className="mt-2 text-sm text-muted-foreground">
+            Revisá tu correo y volvé a esta página cuando abras el enlace de recuperación.
           </p>
         )}
         {errorMessage && (

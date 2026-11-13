@@ -1,15 +1,16 @@
 import type { User } from "@supabase/supabase-js";
 import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import type { AccountRole } from "@/lib/account-roles";
 import { AuthContext } from "@/lib/auth-context";
 import type { AccountProfile } from "@/lib/auth-context";
+import { isAccountRole, normalizeAccountRole } from "@/lib/account-roles";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export type { AccountRole } from "@/lib/account-roles";
 
-function isAccountRole(role: unknown): role is AccountRole {
-  return role === "buyer" || role === "seller" || role === "agency" || role === "admin";
+function hasSchemaMismatch(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
+  return /(?:\b(column|table|relation)\b.*\b(?:does not exist|do not exist|not found)\b|missing.*(?:column|table|relation))/i.test(message);
 }
 
 export function AuthProvider({ children }: { children: ReactNode }) {
@@ -36,25 +37,75 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
+      const profileResult = await supabase
         .from("users")
         .select("id, email, full_name, role, agency_id")
         .eq("id", currentUser.id)
         .maybeSingle();
 
+      const profileData = profileResult.data;
+      const profileErrorData = profileResult.error;
+
+      const fallbackProfileResult =
+        profileData || !profileErrorData || !hasSchemaMismatch(profileErrorData)
+          ? null
+          : await supabase.from("profiles").select("id, full_name").eq("id", currentUser.id).maybeSingle();
+
+      const effectiveProfile = profileData ?? fallbackProfileResult?.data ?? null;
+      const effectiveProfileError = effectiveProfile ? null : profileErrorData ?? fallbackProfileResult?.error ?? null;
+
+      const roleResult = await supabase.from("user_roles").select("role").eq("user_id", currentUser.id);
+      const roleRows = roleResult.data ?? [];
+      const roleError = roleResult.error;
+
+      const fallbackRoleResult =
+        roleRows.length > 0 || !roleError || !hasSchemaMismatch(roleError)
+          ? null
+          : await supabase.from("users").select("role").eq("id", currentUser.id).maybeSingle();
+
+      const effectiveRoleRows = roleRows.length > 0 ? roleRows : fallbackRoleResult?.data ? [{ role: fallbackRoleResult.data.role }] : [];
+      const effectiveRoleError = effectiveRoleRows.length > 0 ? null : roleError ?? fallbackRoleResult?.error ?? null;
+
+      const agencyResult = await supabase
+        .from("agency_members")
+        .select("agency_id")
+        .eq("user_id", currentUser.id)
+        .limit(1)
+        .maybeSingle();
+      const agencyRows = agencyResult.data;
+      const agencyError = agencyResult.error;
+
+      const fallbackAgencyResult =
+        agencyRows || !agencyError || !hasSchemaMismatch(agencyError)
+          ? null
+          : await supabase.from("users").select("agency_id").eq("id", currentUser.id).maybeSingle();
+
+      const effectiveAgency = agencyRows ?? fallbackAgencyResult?.data ?? null;
+      const effectiveAgencyError = effectiveAgency ? null : agencyError ?? fallbackAgencyResult?.error ?? null;
+
       if (requestId !== profileRequest.current) return;
 
-      if (error) throw error;
-      if (!data || !isAccountRole(data.role)) {
+      if (effectiveProfileError || effectiveRoleError || effectiveAgencyError) {
+        throw effectiveProfileError ?? effectiveRoleError ?? effectiveAgencyError;
+      }
+
+      const normalizedRole = normalizeAccountRole(
+        effectiveRoleRows[0]?.role ?? effectiveProfile?.role ?? currentUser.user_metadata?.requested_role ?? "seller",
+      );
+      if (!normalizedRole || !isAccountRole(normalizedRole)) {
         setProfile(null);
         setProfileError("Tu cuenta todavía no tiene un perfil con rol asignado.");
       } else {
         setProfile({
-          id: data.id,
-          email: data.email,
-          fullName: data.full_name,
-          role: data.role,
-          agencyId: data.agency_id,
+          id: currentUser.id,
+          email: effectiveProfile?.email ?? currentUser.email ?? null,
+          fullName:
+            effectiveProfile?.full_name ??
+            effectiveProfile?.fullName ??
+            currentUser.user_metadata?.full_name ??
+            null,
+          role: normalizedRole,
+          agencyId: effectiveAgency?.agency_id ?? effectiveProfile?.agency_id ?? null,
         });
         setProfileError(null);
       }
