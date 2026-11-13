@@ -83,6 +83,27 @@ function optionalString(record: Record<string, unknown>, key: string): string {
   return value;
 }
 
+function getPublicationErrorMessage(error: unknown): string {
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "object" && error !== null && "message" in error && typeof error.message === "string"
+        ? error.message
+        : "";
+
+  if (/row-level security|permission denied|not authorized|new row violates/i.test(message)) {
+    return "No tenés permiso para guardar este anuncio. Verificá que tu cuenta tenga permiso para subir imágenes y crear sus propios anuncios.";
+  }
+  if (/bucket.*(?:not found|does not exist)|(?:not found|does not exist).*bucket/i.test(message)) {
+    return "No está configurado el almacenamiento de imágenes. Intentá nuevamente cuando esté habilitado.";
+  }
+  if (/column|schema cache|requested_plan|pending_review/i.test(message)) {
+    return "La configuración de publicaciones necesita una actualización. Intentá nuevamente en unos minutos.";
+  }
+
+  return "No se pudo guardar el anuncio. Verificá la conexión e intentá nuevamente.";
+}
+
 function optionalDetails(value: unknown): Record<string, string | string[]> {
   if (!isRecord(value)) return {};
   const details: Record<string, string | string[]> = {};
@@ -322,6 +343,6 @@ export async function publishListing(input: ListingSubmission): Promise<void> {
         console.error("Could not remove images from the failed listing submission:", cleanupError);
       }
     }
-    throw new Error("No se pudo guardar el anuncio. Verificá la conexión e intentá nuevamente.");
+    throw new Error(getPublicationErrorMessage(error));
   }
 }

@@ -109,6 +109,11 @@ function isOneOf<T extends string>(value: string, choices: readonly T[]): value 
 const formatColones = (amount: number) =>
   `₡${new Intl.NumberFormat("es-CR", { maximumFractionDigits: 0 }).format(amount).replace(/[,\u00a0]/g, ".")}`;
 
+const getLocalPhone = (phone: string | null | undefined) => {
+  const digits = phone?.replace(/\D/g, "") ?? "";
+  return digits.replace(/^506(?=\d{8}$)/, "");
+};
+
 const getPhotoError = (count: number, limit: number) => {
   if (count < 2) return "Seleccioná al menos 2 fotos.";
   if (count > limit) return `El plan seleccionado permite hasta ${limit} fotos.`;
@@ -248,6 +253,7 @@ function Vender() {
   const fileInput = useRef<HTMLInputElement>(null);
   const hasExtraPhotos = selectedServices.includes("extra-photos");
   const photoLimit = getPhotoLimit(selectedPlan, hasExtraPhotos);
+  const sellerPhone = getLocalPhone(profile?.phone);
   const estimate = calculateListingEstimate({
     plan: selectedPlan,
     selectedTags,
@@ -1225,6 +1231,7 @@ function Vender() {
               <Field label="Nombre (sin apellido)">
                 <input
                   name="seller"
+                  defaultValue={profile?.fullName?.trim().split(/\s+/)[0] ?? ""}
                   autoComplete="name"
                   placeholder="Solo tu nombre"
                   className={field}
@@ -1233,6 +1240,7 @@ function Vender() {
               <Field label="Correo electrónico">
                 <input
                   name="seller_email"
+                  defaultValue={profile?.email ?? ""}
                   type="email"
                   autoComplete="email"
                   placeholder="nombre@correo.com"
@@ -1243,6 +1251,7 @@ function Vender() {
                 <input
                   required
                   name="phone"
+                  defaultValue={sellerPhone}
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9]{8}"
@@ -1275,6 +1284,7 @@ function Vender() {
               <Field label="WhatsApp del vendedor">
                 <input
                   name="whatsapp_phone"
+                  defaultValue={sellerPhone}
                   type="tel"
                   inputMode="numeric"
                   pattern="[0-9]{8}"

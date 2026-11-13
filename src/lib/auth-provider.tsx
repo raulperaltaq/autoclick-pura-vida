@@ -35,7 +35,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     try {
       const profileResult = await supabase
         .from("users")
-        .select("id, email, full_name, role, agency_id")
+        .select("id, email, full_name, phone, role, agency_id")
         .eq("id", currentUser.id)
         .maybeSingle();
 
@@ -45,7 +45,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const fallbackProfileResult =
         profileData || !profileErrorData || !isSchemaMismatch(profileErrorData)
           ? null
-          : await supabase.from("profiles").select("id, full_name").eq("id", currentUser.id).maybeSingle();
+          : await supabase.from("profiles").select("id, full_name, phone").eq("id", currentUser.id).maybeSingle();
 
       const effectiveProfile = profileData ?? fallbackProfileResult?.data ?? null;
       const effectiveProfileError = effectiveProfile ? null : profileErrorData ?? fallbackProfileResult?.error ?? null;
@@ -100,6 +100,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
             effectiveProfile?.fullName ??
             currentUser.user_metadata?.full_name ??
             null,
+          phone: effectiveProfile?.phone ?? null,
           role: normalizedRole,
           agencyId: effectiveAgency?.agency_id ?? effectiveProfile?.agency_id ?? null,
         });

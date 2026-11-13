@@ -6,6 +6,7 @@ export type AccountProfile = {
   id: string;
   email: string | null;
   fullName: string | null;
+  phone: string | null;
   role: AccountRole;
   agencyId: string | null;
 };
