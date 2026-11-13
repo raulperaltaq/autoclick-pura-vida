@@ -181,7 +181,7 @@ function SelectField({
   required?: boolean;
 }) {
   return (
-    <Field label={label} className={className}>
+    <Field label={label} required={required} className={className}>
       <select className={selectField} name={name} defaultValue="" required={required}>
         <option value="">{placeholder}</option>
         {options.map((option) => (
