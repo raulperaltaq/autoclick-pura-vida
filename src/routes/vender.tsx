@@ -1379,7 +1379,15 @@ function Vender() {
           )}
           {publishMessage && (
             <p role="status" className="rounded-xl bg-secondary p-4 text-sm">
-              {publishMessage}
+              {publishMessage}{" "}
+              {profile?.role !== "agency" && (
+                <Link
+                  to="/mis-vehiculos"
+                  className="font-semibold text-primary underline underline-offset-2"
+                >
+                  Consultar mis vehículos
+                </Link>
+              )}
             </p>
           )}
           <button

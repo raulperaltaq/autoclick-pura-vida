@@ -38,7 +38,7 @@ export function ListingCard({ listing }: { listing: Listing }) {
         >
           {badge.label}
         </span>
-        <ListingFavoriteButton listingId={listing.id} />
+        <ListingFavoriteButton listingId={listing.id} returnTo={returnTo} />
       </div>
       <Link to="/autos/$id" params={{ id: listing.id }} search={{ returnTo }} className="block p-4">
         <div className="flex items-start justify-between gap-2">

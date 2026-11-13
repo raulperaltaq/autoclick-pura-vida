@@ -27,6 +27,18 @@ export type ListingSubmission = Omit<
   extraPhotos: boolean;
 };
 
+export type OwnedListing = {
+  id: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  currency: Listing["currency"];
+  status: string;
+  image: string;
+  publishedAt: string | null;
+};
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null;
 }
@@ -144,6 +156,31 @@ function toListing(value: unknown): Listing {
   };
 }
 
+function toOwnedListing(value: unknown): OwnedListing {
+  if (!isRecord(value)) {
+    throw new Error("Invalid owned listing data: each row must be an object.");
+  }
+
+  const currency = requiredChoice(value, "currency", currencies);
+  const status = requiredString(value, "status");
+  const publishedAt = optionalString(value, "published_at");
+  if (publishedAt && !Number.isFinite(Date.parse(publishedAt))) {
+    throw new Error("Invalid owned listing data: published_at must be a valid timestamp.");
+  }
+
+  return {
+    id: requiredString(value, "id"),
+    make: requiredString(value, "make"),
+    model: requiredString(value, "model"),
+    year: requiredNumber(value, "year"),
+    price: requiredNumber(value, "price"),
+    currency,
+    status,
+    image: optionalString(value, "image_url"),
+    publishedAt: publishedAt || null,
+  };
+}
+
 export async function fetchListings(): Promise<Listing[]> {
   if (!supabase) return listings;
 
@@ -162,6 +199,28 @@ export async function fetchListings(): Promise<Listing[]> {
 
   if (!data?.length) return listings;
   return data.map(toListing);
+}
+
+export async function fetchOwnedListings(ownerId: string): Promise<OwnedListing[]> {
+  if (!supabase) {
+    throw new Error(
+      "La gestión de vehículos no está configurada. Conectá Supabase e intentá nuevamente.",
+    );
+  }
+  if (!ownerId) throw new Error("Iniciá sesión para consultar tus vehículos.");
+
+  const { data, error } = await supabase
+    .from("listings")
+    .select("id, make, model, year, price, currency, status, image_url, published_at")
+    .eq("owner_id", ownerId)
+    .order("published_at", { ascending: false, nullsFirst: true });
+
+  if (error) {
+    console.error("Could not load the authenticated user's vehicle listings:", error);
+    throw new Error("No se pudieron cargar tus vehículos. Intentá nuevamente.");
+  }
+
+  return (data ?? []).map(toOwnedListing);
 }
 
 export async function publishListing(input: ListingSubmission): Promise<void> {

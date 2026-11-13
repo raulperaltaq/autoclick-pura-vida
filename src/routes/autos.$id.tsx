@@ -1,6 +1,6 @@
-import { createFileRoute, Link, notFound } from "@tanstack/react-router";
+import { createFileRoute, Link, notFound, useNavigate } from "@tanstack/react-router";
 import { MapPin, MessageCircle, Share2 } from "lucide-react";
-import { useState } from "react";
+import { useCallback, useState } from "react";
 import {
   formatListingPrice,
   getListingOptionalDetails,
@@ -19,6 +19,7 @@ export const Route = createFileRoute("/autos/$id")({
       !search["returnTo"].startsWith("//")
         ? search["returnTo"]
         : "/",
+    ...(search["saveFavorite"] === "1" ? { saveFavorite: true as const } : {}),
   }),
   loader: async ({ params, context }) => {
     const cachedListings = context.queryClient.getQueryData<Listing[]>(["listings"]);
@@ -63,8 +64,17 @@ export const Route = createFileRoute("/autos/$id")({
 
 function Detail() {
   const { listing: l } = Route.useLoaderData();
-  const { returnTo } = Route.useSearch();
+  const { returnTo, saveFavorite } = Route.useSearch();
+  const navigate = useNavigate({ from: "/autos/$id" });
   const [shareStatus, setShareStatus] = useState("");
+  const clearFavoriteIntent = useCallback(() => {
+    void navigate({
+      to: "/autos/$id",
+      params: { id: l.id },
+      search: { returnTo },
+      replace: true,
+    });
+  }, [l.id, navigate, returnTo]);
   const specs: Array<[string, string | number | null]> = [
     ["Año", l.year],
     ["Kilometraje", l.km === null ? null : `${l.km.toLocaleString("es-CR")} km`],
@@ -132,7 +142,12 @@ function Detail() {
             ))}
           </div>
           <div className="relative -mt-10 flex justify-end pr-4">
-            <ListingFavoriteButton listingId={l.id} />
+            <ListingFavoriteButton
+              listingId={l.id}
+              returnTo={returnTo}
+              saveOnLoad={Boolean(saveFavorite)}
+              onSaveIntentHandled={clearFavoriteIntent}
+            />
           </div>
           {l.description.trim() && (
             <>

@@ -51,7 +51,9 @@ security. Agency inventory, memberships, leads, and billing, plus user
 favorites (`favorites.user_id`, `favorites.listing_id`, `favorites.created_at`)
 and listings, also require their corresponding Lovable-managed tables and
 policies. Favorite rows must be readable, insertable, and deletable only by
-their owner. No database migrations are created or edited in this repository.
+their owner. Visitors who request a favorite are returned to the listing after
+sign-in, where the save is completed. No database migrations are created or
+edited in this repository.
 
 ### Vehicle listing storage
 
@@ -66,8 +68,10 @@ approval/payment.
 
 Configure the table, Storage bucket, and row-level security in the Lovable
 editor. Public users should only read published listings; authenticated
-accounts may submit their own pending listings, and only trusted approval or
-payment logic should set the active plan, `published_at`, and
+accounts may submit their own pending listings and read their own listings in
+any status for the account dashboard. Enforce that owner read access with RLS;
+the client-side `owner_id` filter is not an authorization boundary. Only trusted
+approval or payment logic should set the active plan, `published_at`, and
 `whatsapp_enabled` only when the corresponding payment is confirmed. Never
 allow a listing owner to set `whatsapp_enabled` directly. Storage uploads should
 be restricted to the authenticated user's folder and supported image types.
