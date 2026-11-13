@@ -3,15 +3,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { AuthContext } from "@/lib/auth-context";
 import type { AccountProfile } from "@/lib/auth-context";
+import { isSchemaMismatch } from "@/lib/account-schema";
 import { isAccountRole, normalizeAccountRole } from "@/lib/account-roles";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
 export type { AccountRole } from "@/lib/account-roles";
-
-function hasSchemaMismatch(error: unknown): boolean {
-  const message = error instanceof Error ? error.message : typeof error === "string" ? error : "";
-  return /(?:\b(column|table|relation)\b.*\b(?:does not exist|do not exist|not found)\b|missing.*(?:column|table|relation))/i.test(message);
-}
 
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
@@ -47,7 +43,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const profileErrorData = profileResult.error;
 
       const fallbackProfileResult =
-        profileData || !profileErrorData || !hasSchemaMismatch(profileErrorData)
+        profileData || !profileErrorData || !isSchemaMismatch(profileErrorData)
           ? null
           : await supabase.from("profiles").select("id, full_name").eq("id", currentUser.id).maybeSingle();
 
@@ -59,7 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const roleError = roleResult.error;
 
       const fallbackRoleResult =
-        roleRows.length > 0 || !roleError || !hasSchemaMismatch(roleError)
+        roleRows.length > 0 || !roleError || !isSchemaMismatch(roleError)
           ? null
           : await supabase.from("users").select("role").eq("id", currentUser.id).maybeSingle();
 
@@ -76,7 +72,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       const agencyError = agencyResult.error;
 
       const fallbackAgencyResult =
-        agencyRows || !agencyError || !hasSchemaMismatch(agencyError)
+        agencyRows || !agencyError || !isSchemaMismatch(agencyError)
           ? null
           : await supabase.from("users").select("agency_id").eq("id", currentUser.id).maybeSingle();
 
