@@ -16,6 +16,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as MiCuentaRouteImport } from './routes/mi-cuenta'
 import { Route as ResetPasswordRouteImport } from './routes/reset-password'
+import { Route as ResumenAnuncioRouteImport } from './routes/resumen-anuncio'
 import { Route as VenderRouteImport } from './routes/vender'
 import { Route as AuthenticatedMisVehiculosRouteImport } from './routes/_authenticated/mis-vehiculos'
 import { Route as AutosIndexRouteImport } from './routes/autos.index'
@@ -57,6 +58,11 @@ const ResetPasswordRoute = ResetPasswordRouteImport.update({
   path: '/reset-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResumenAnuncioRoute = ResumenAnuncioRouteImport.update({
+  id: '/resumen-anuncio',
+  path: '/resumen-anuncio',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VenderRoute = VenderRouteImport.update({
   id: '/vender',
   path: '/vender',
@@ -96,6 +102,7 @@ export interface FileRoutesByFullPath {
   '/favoritos': typeof FavoritosRoute
   '/mi-cuenta': typeof MiCuentaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resumen-anuncio': typeof ResumenAnuncioRoute
   '/vender': typeof VenderRoute
   '/mis-vehiculos': typeof AuthenticatedMisVehiculosRoute
   '/autos/$id': typeof AutosIdRoute
@@ -110,6 +117,7 @@ export interface FileRoutesByTo {
   '/favoritos': typeof FavoritosRoute
   '/mi-cuenta': typeof MiCuentaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resumen-anuncio': typeof ResumenAnuncioRoute
   '/vender': typeof VenderRoute
   '/mis-vehiculos': typeof AuthenticatedMisVehiculosRoute
   '/autos/$id': typeof AutosIdRoute
@@ -126,6 +134,7 @@ export interface FileRoutesById {
   '/favoritos': typeof FavoritosRoute
   '/mi-cuenta': typeof MiCuentaRoute
   '/reset-password': typeof ResetPasswordRoute
+  '/resumen-anuncio': typeof ResumenAnuncioRoute
   '/vender': typeof VenderRoute
   '/_authenticated/mis-vehiculos': typeof AuthenticatedMisVehiculosRoute
   '/autos/$id': typeof AutosIdRoute
@@ -142,6 +151,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/mi-cuenta'
     | '/reset-password'
+    | '/resumen-anuncio'
     | '/vender'
     | '/mis-vehiculos'
     | '/autos/$id'
@@ -156,6 +166,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/mi-cuenta'
     | '/reset-password'
+    | '/resumen-anuncio'
     | '/vender'
     | '/mis-vehiculos'
     | '/autos/$id'
@@ -171,6 +182,7 @@ export interface FileRouteTypes {
     | '/favoritos'
     | '/mi-cuenta'
     | '/reset-password'
+    | '/resumen-anuncio'
     | '/vender'
     | '/_authenticated/mis-vehiculos'
     | '/autos/$id'
@@ -187,6 +199,7 @@ export interface RootRouteChildren {
   FavoritosRoute: typeof FavoritosRoute
   MiCuentaRoute: typeof MiCuentaRoute
   ResetPasswordRoute: typeof ResetPasswordRoute
+  ResumenAnuncioRoute: typeof ResumenAnuncioRoute
   VenderRoute: typeof VenderRoute
   AutosIdRoute: typeof AutosIdRoute
   AutosAvanzadaRoute: typeof AutosAvanzadaRoute
@@ -243,6 +256,13 @@ declare module '@tanstack/react-router' {
       path: '/reset-password'
       fullPath: '/reset-password'
       preLoaderRoute: typeof ResetPasswordRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/resumen-anuncio': {
+      id: '/resumen-anuncio'
+      path: '/resumen-anuncio'
+      fullPath: '/resumen-anuncio'
+      preLoaderRoute: typeof ResumenAnuncioRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/vender': {
@@ -309,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   FavoritosRoute: FavoritosRoute,
   MiCuentaRoute: MiCuentaRoute,
   ResetPasswordRoute: ResetPasswordRoute,
+  ResumenAnuncioRoute: ResumenAnuncioRoute,
   VenderRoute: VenderRoute,
   AutosIdRoute: AutosIdRoute,
   AutosAvanzadaRoute: AutosAvanzadaRoute,

@@ -1,8 +1,7 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { ChangeEvent, DragEvent, FormEvent, ReactNode } from "react";
 import { provinces } from "@/data/listings";
-import { publishListing } from "@/data/listings-repository";
 import {
   addOnServices,
   agencyPlans,
@@ -18,6 +17,7 @@ import type { AddOnId, ListingPlanId } from "@/data/monetization";
 import { styles } from "@/data/search-options";
 import { useAuth } from "@/lib/use-auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
+import { setListingReviewDraft } from "@/lib/listing-review-draft";
 
 export const Route = createFileRoute("/vender")({
   head: () => ({
@@ -247,10 +247,9 @@ function Vender() {
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoError, setPhotoError] = useState("");
   const [mainPhoto, setMainPhoto] = useState(0);
-  const [isPublishing, setIsPublishing] = useState(false);
   const [publishError, setPublishError] = useState("");
-  const [publishMessage, setPublishMessage] = useState("");
   const fileInput = useRef<HTMLInputElement>(null);
+  const navigate = useNavigate();
   const hasExtraPhotos = selectedServices.includes("extra-photos");
   const photoLimit = getPhotoLimit(selectedPlan, hasExtraPhotos);
   const sellerPhone = getLocalPhone(profile?.phone);
@@ -358,10 +357,9 @@ function Vender() {
     });
   };
 
-  const handlePublish = async (event: FormEvent<HTMLFormElement>) => {
+  const handleReview = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setPublishError("");
-    setPublishMessage("");
 
     if (!user) {
       setPublishError("Iniciá sesión para guardar el anuncio en tu cuenta.");
@@ -372,7 +370,6 @@ function Vender() {
       return;
     }
 
-    setIsPublishing(true);
     const form = event.currentTarget;
     const formData = new FormData(form);
     const text = (key: string) => String(formData.get(key) ?? "").trim();
@@ -422,7 +419,8 @@ function Vender() {
       if (!isOneOf(condition, conditionOptions))
         throw new Error("Seleccioná el estado del vehículo.");
 
-      await publishListing({
+      setListingReviewDraft({
+        listing: {
         make: text("make"),
         model: text("model"),
         year,
@@ -446,16 +444,15 @@ function Vender() {
         photos,
         mainPhotoIndex: mainPhoto,
         extraPhotos: hasExtraPhotos,
+        },
+        sellerEmail: text("seller_email"),
+        secondaryPhones: [text("phone_2"), text("phone_3")].filter(Boolean),
+        whatsappPhone: text("whatsapp_phone"),
+        selectedTags,
+        selectedPacks,
+        selectedServices,
       });
-
-      form.reset();
-      setPhotos([]);
-      setMainPhoto(0);
-      setSelectedPlan("free");
-      setSelectedTags([]);
-      setSelectedPacks([]);
-      setSelectedServices([]);
-      setPublishMessage("Anuncio enviado a revisión. Se publicará cuando sea aprobado.");
+      navigate({ to: "/resumen-anuncio" });
     } catch (error) {
       console.error("Could not submit vehicle listing:", error);
       setPublishError(
@@ -463,8 +460,6 @@ function Vender() {
           ? error.message
           : "No se pudo enviar el anuncio. Intentá nuevamente.",
       );
-    } finally {
-      setIsPublishing(false);
     }
   };
 
@@ -721,7 +716,7 @@ function Vender() {
           Verificando sesión…
         </p>
       ) : activeAudience === "individual" && (!user || profile?.role !== "agency") ? (
-        <form onSubmit={(event) => void handlePublish(event)} className="space-y-6">
+        <form onSubmit={handleReview} className="space-y-6">
           <p role="status" className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
             La publicación requiere una cuenta y aprobación; recibirás confirmación antes de que el
             anuncio aparezca públicamente. Los planes y servicios seleccionados se guardan como
@@ -1387,25 +1382,12 @@ function Vender() {
               {publishError}
             </p>
           )}
-          {publishMessage && (
-            <p role="status" className="rounded-xl bg-secondary p-4 text-sm">
-              {publishMessage}{" "}
-              {profile?.role !== "agency" && (
-                <Link
-                  to="/mis-vehiculos"
-                  className="font-semibold text-primary underline underline-offset-2"
-                >
-                  Consultar mis vehículos
-                </Link>
-              )}
-            </p>
-          )}
           <button
             type="submit"
-            disabled={isPublishing || !isSupabaseConfigured || !user || Boolean(photoError)}
+            disabled={!isSupabaseConfigured || !user || Boolean(photoError)}
             className="w-full rounded-full bg-primary px-6 py-3 font-bold text-primary-foreground disabled:cursor-not-allowed disabled:bg-muted disabled:text-muted-foreground"
           >
-            {isPublishing ? "Guardando anuncio…" : "Enviar anuncio a revisión"}
+            Revisar anuncio
           </button>
         </form>
       ) : activeAudience === "individual" ? (
