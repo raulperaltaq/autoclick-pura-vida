@@ -419,11 +419,18 @@ export async function fetchAllListingsForAdmin(): Promise<AdminListing[]> {
   const { data, error } = await supabase
     .from("listings")
     .select("*")
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false, nullsFirst: false });
 
   if (error) {
+    const isRlsError = /row-level security|permission denied|not authorized/i.test(
+      String(error?.message ?? ""),
+    );
     console.error("Could not load listings for admin:", error);
-    throw new Error("No se pudieron cargar los anuncios para revisión.");
+    throw new Error(
+      isRlsError
+        ? "No tenés permiso para leer los anuncios. Verificá que tu rol de administrador tenga acceso a la tabla listings."
+        : "No se pudieron cargar los anuncios para revisión.",
+    );
   }
 
   return (data ?? []).map((row) => ({
@@ -458,8 +465,8 @@ export async function fetchAllListingsForAdmin(): Promise<AdminListing[]> {
     description: row.description,
     details: (row.details as Record<string, string | string[]>) ?? {},
     whatsapp_enabled: row.whatsapp_enabled,
-    created_at: row.created_at,
-    updated_at: row.updated_at,
+    created_at: row.created_at ?? row.published_at ?? null,
+    updated_at: row.updated_at ?? row.created_at ?? row.published_at ?? null,
   }));
 }
 

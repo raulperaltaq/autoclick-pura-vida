@@ -19,7 +19,7 @@ import {
   Edit3,
 } from "lucide-react";
 
-export const Route = createFileRoute("/admin")({
+export const Route = createFileRoute("/admin/")({
   head: () => ({
     meta: [
       { title: "Panel de Administración | autoclick.cr" },
@@ -42,7 +42,7 @@ const statusLabels: Record<string, { label: string; variant: string }> = {
 
 function AdminPage() {
   const { profile } = useAuth();
-  const [statusFilter, setStatusFilter] = useState<string>("pending_review");
+  const [statusFilter, setStatusFilter] = useState<string>("all");
   const [isConfirming, setIsConfirming] = useState<string | null>(null);
   const [confirmAction, setConfirmAction] = useState<{
     listingId: string;
@@ -178,10 +178,9 @@ function AdminPage() {
               {listings.length} anuncio{listings.length !== 1 ? "s" : ""}
             </span>
             <div className="flex items-center gap-2">
-              <span className="text-xs text-muted-foreground">Filtrar por:</span>
+              <span className="text-xs text-muted-foreground">Filtrar por estado:</span>
               <div className="flex gap-1">
                 {[
-                  { id: "all", label: "Todos" },
                   { id: "pending_review", label: "Pendientes" },
                   { id: "published", label: "Publicados" },
                   { id: "rejected", label: "Rechazados" },
@@ -199,7 +198,27 @@ function AdminPage() {
             </div>
           </div>
 
-          {listingsQuery.isPending ? (
+          {listingsQuery.isError ? (
+            <div className="py-20 text-center">
+              <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
+                <p className="text-sm font-semibold text-destructive">
+                  Error al cargar anuncios
+                </p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {listingsQuery.error instanceof Error
+                    ? listingsQuery.error.message
+                    : "No se pudieron cargar los anuncios."}
+                </p>
+                <Button
+                  type="button"
+                  onClick={() => void listingsQuery.refetch()}
+                  className="mt-4 inline-flex items-center gap-2"
+                >
+                  <RefreshCw className="h-4 w-4" /> Reintentar
+                </Button>
+              </div>
+            </div>
+          ) : listingsQuery.isPending ? (
             <div className="py-20 text-center">
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
               <p className="mt-3 text-sm text-muted-foreground">
@@ -213,7 +232,7 @@ function AdminPage() {
                 No hay anuncios con este estado
               </h2>
               <p className="mt-2 text-sm text-muted-foreground">
-                Cambiá el filtro o revisá más tarde.
+                Cambiá el filtro a "Todos" o revisá más tarde.
               </p>
             </div>
           ) : (
@@ -237,7 +256,7 @@ function AdminPage() {
                         </div>
                       )}
                       <div>
-                        <Link to="/admin/anuncios/$id" params={{ id: listing.id }}
+                        <Link to={"/admin/anuncios/$id" as any} params={{ id: listing.id }}
                           className="font-semibold text-foreground hover:text-primary">
                           {listing.make} {listing.model} {listing.year}
                         </Link>
@@ -259,7 +278,9 @@ function AdminPage() {
                         {status.label}
                       </Badge>
                       <div className="flex items-center gap-2">
-                        <Link to="/admin/anuncios/$id" params={{ id: listing.id }}
+                        <Link
+                          to="/admin/anuncios/$id"
+                          params={{ id: String(listing.id) }}
                           className="text-xs font-semibold text-primary hover:underline">
                           <Eye className="h-3 w-3 mr-1" /> Ver
                         </Link>
@@ -269,12 +290,12 @@ function AdminPage() {
                               disabled={isConfirming === listing.id}
                               className={`text-xs font-bold px-2 py-1 rounded transition ${isConfirming === listing.id
                                 ? "opacity-50 cursor-not-allowed"
-                                : status === "published"
+                                : listing.status === "published"
                                   ? "text-success hover:bg-success/10"
                                   : "text-destructive hover:bg-destructive/10"
                               }`}>
                               {isConfirming === listing.id ? "Procesando…"
-                                : status === "published" ? "Confirmar Aprobar" : "Confirmar Rechazar"}
+                                : listing.status === "published" ? "Confirmar Aprobar" : "Confirmar Rechazar"}
                             </button>
                             <button onClick={handleCancel}
                               className="text-xs font-bold text-muted-foreground px-2 py-1 rounded hover:bg-muted">
@@ -293,7 +314,9 @@ function AdminPage() {
                             </button>
                           </>
                         )}
-                        <Link to="/admin/anuncios/$id" params={{ id: listing.id }}
+                        <Link
+                          to="/admin/anuncios/$id"
+                          params={{ id: String(listing.id) }}
                           className="text-xs font-semibold text-primary hover:underline">
                           <Edit3 className="h-3 w-3 mr-1" /> Editar
                         </Link>

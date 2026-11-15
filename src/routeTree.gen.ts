@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedRouteRouteImport } from './routes/_authenticated/route'
 import { Route as AccederRouteImport } from './routes/acceder'
+import { Route as AdminRouteRouteImport } from './routes/admin/route'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as FavoritosRouteImport } from './routes/favoritos'
 import { Route as MiCuentaRouteImport } from './routes/mi-cuenta'
@@ -19,12 +20,11 @@ import { Route as ResetPasswordRouteImport } from './routes/reset-password'
 import { Route as ResumenAnuncioRouteImport } from './routes/resumen-anuncio'
 import { Route as VenderRouteImport } from './routes/vender'
 import { Route as AuthenticatedMisVehiculosRouteImport } from './routes/_authenticated/mis-vehiculos'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AutosIndexRouteImport } from './routes/autos.index'
 import { Route as AutosIdRouteImport } from './routes/autos.$id'
 import { Route as AutosAvanzadaRouteImport } from './routes/autos.avanzada'
 import { Route as DashboardAgenciaRouteImport } from './routes/dashboard.agencia'
-import { Route as AdminRouteImport } from './routes/admin/route'
-import { Route as AdminIndexRouteImport } from './routes/admin/index'
 import { Route as AdminAnunciosIdRouteImport } from './routes/admin/anuncios.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -39,6 +39,11 @@ const AuthenticatedRouteRoute = AuthenticatedRouteRouteImport.update({
 const AccederRoute = AccederRouteImport.update({
   id: '/acceder',
   path: '/acceder',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRouteRoute = AdminRouteRouteImport.update({
+  id: '/admin',
+  path: '/admin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -77,6 +82,11 @@ const AuthenticatedMisVehiculosRoute =
     path: '/mis-vehiculos',
     getParentRoute: () => AuthenticatedRouteRoute,
   } as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdminRouteRoute,
+} as any)
 const AutosIndexRoute = AutosIndexRouteImport.update({
   id: '/autos/',
   path: '/autos/',
@@ -97,23 +107,15 @@ const DashboardAgenciaRoute = DashboardAgenciaRouteImport.update({
   path: '/dashboard/agencia',
   getParentRoute: () => rootRouteImport,
 } as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminIndexRoute = AdminIndexRouteImport.update({
-  id: '/admin/',
-  path: '/admin/',
-  getParentRoute: () => AdminRoute,
-} as any)
 const AdminAnunciosIdRoute = AdminAnunciosIdRouteImport.update({
-  id: '/admin/anuncios/$id',
-  path: '/admin/anuncios/$id',
-  getParentRoute: () => AdminRoute,
+  id: '/anuncios/$id',
+  path: '/anuncios/$id',
+  getParentRoute: () => AdminRouteRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRouteRouteWithChildren
   '/acceder': typeof AccederRoute
   '/auth': typeof AuthRoute
   '/favoritos': typeof FavoritosRoute
@@ -125,7 +127,9 @@ export interface FileRoutesByFullPath {
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
   '/dashboard/agencia': typeof DashboardAgenciaRoute
+  '/admin/': typeof AdminIndexRoute
   '/autos/': typeof AutosIndexRoute
+  '/admin/anuncios/$id': typeof AdminAnunciosIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -140,12 +144,15 @@ export interface FileRoutesByTo {
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
   '/dashboard/agencia': typeof DashboardAgenciaRoute
+  '/admin': typeof AdminIndexRoute
   '/autos': typeof AutosIndexRoute
+  '/admin/anuncios/$id': typeof AdminAnunciosIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/_authenticated': typeof AuthenticatedRouteRouteWithChildren
+  '/admin': typeof AdminRouteRouteWithChildren
   '/acceder': typeof AccederRoute
   '/auth': typeof AuthRoute
   '/favoritos': typeof FavoritosRoute
@@ -157,12 +164,15 @@ export interface FileRoutesById {
   '/autos/$id': typeof AutosIdRoute
   '/autos/avanzada': typeof AutosAvanzadaRoute
   '/dashboard/agencia': typeof DashboardAgenciaRoute
+  '/admin/': typeof AdminIndexRoute
   '/autos/': typeof AutosIndexRoute
+  '/admin/anuncios/$id': typeof AdminAnunciosIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/admin'
     | '/acceder'
     | '/auth'
     | '/favoritos'
@@ -174,7 +184,9 @@ export interface FileRouteTypes {
     | '/autos/$id'
     | '/autos/avanzada'
     | '/dashboard/agencia'
+    | '/admin/'
     | '/autos/'
+    | '/admin/anuncios/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -189,11 +201,14 @@ export interface FileRouteTypes {
     | '/autos/$id'
     | '/autos/avanzada'
     | '/dashboard/agencia'
+    | '/admin'
     | '/autos'
+    | '/admin/anuncios/$id'
   id:
     | '__root__'
     | '/'
     | '/_authenticated'
+    | '/admin'
     | '/acceder'
     | '/auth'
     | '/favoritos'
@@ -205,12 +220,15 @@ export interface FileRouteTypes {
     | '/autos/$id'
     | '/autos/avanzada'
     | '/dashboard/agencia'
+    | '/admin/'
     | '/autos/'
+    | '/admin/anuncios/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthenticatedRouteRoute: typeof AuthenticatedRouteRouteWithChildren
+  AdminRouteRoute: typeof AdminRouteRouteWithChildren
   AccederRoute: typeof AccederRoute
   AuthRoute: typeof AuthRoute
   FavoritosRoute: typeof FavoritosRoute
@@ -245,6 +263,13 @@ declare module '@tanstack/react-router' {
       path: '/acceder'
       fullPath: '/acceder'
       preLoaderRoute: typeof AccederRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -296,6 +321,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedMisVehiculosRouteImport
       parentRoute: typeof AuthenticatedRouteRoute
     }
+    '/admin/': {
+      id: '/admin/'
+      path: '/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRouteRoute
+    }
     '/autos/': {
       id: '/autos/'
       path: '/autos'
@@ -324,26 +356,12 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAgenciaRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin/': {
-      id: '/admin/'
-      path: '/admin/'
-      fullPath: '/admin/'
-      preLoaderRoute: typeof AdminIndexRouteImport
-      parentRoute: typeof AdminRoute
-    }
     '/admin/anuncios/$id': {
       id: '/admin/anuncios/$id'
-      path: '/admin/anuncios/$id'
+      path: '/anuncios/$id'
       fullPath: '/admin/anuncios/$id'
       preLoaderRoute: typeof AdminAnunciosIdRouteImport
-      parentRoute: typeof AdminRoute
+      parentRoute: typeof AdminRouteRoute
     }
   }
 }
@@ -359,22 +377,24 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
 
-interface AdminRouteChildren {
+interface AdminRouteRouteChildren {
   AdminIndexRoute: typeof AdminIndexRoute
   AdminAnunciosIdRoute: typeof AdminAnunciosIdRoute
 }
 
-const AdminRouteChildren: AdminRouteChildren = {
+const AdminRouteRouteChildren: AdminRouteRouteChildren = {
   AdminIndexRoute: AdminIndexRoute,
   AdminAnunciosIdRoute: AdminAnunciosIdRoute,
 }
 
-const AdminRouteWithChildren =
-  AdminRoute._addFileChildren(AdminRouteChildren)
+const AdminRouteRouteWithChildren = AdminRouteRoute._addFileChildren(
+  AdminRouteRouteChildren,
+)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthenticatedRouteRoute: AuthenticatedRouteRouteWithChildren,
+  AdminRouteRoute: AdminRouteRouteWithChildren,
   AccederRoute: AccederRoute,
   AuthRoute: AuthRoute,
   FavoritosRoute: FavoritosRoute,
@@ -386,7 +406,6 @@ const rootRouteChildren: RootRouteChildren = {
   AutosAvanzadaRoute: AutosAvanzadaRoute,
   DashboardAgenciaRoute: DashboardAgenciaRoute,
   AutosIndexRoute: AutosIndexRoute,
-  AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

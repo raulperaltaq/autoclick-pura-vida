@@ -148,7 +148,7 @@ function EditListingPage() {
       <main className="mx-auto max-w-5xl px-4 py-8 sm:py-10">
         <header className="mb-8 flex flex-wrap items-center justify-between gap-4">
           <div>
-            <Link to="/admin">
+            <Link to={"/admin" as any}>
               <ArrowLeft className="mr-2 h-5 w-5" /> Volver al panel
             </Link>
             <h1 className="mt-2 text-3xl font-extrabold">
