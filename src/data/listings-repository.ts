@@ -346,3 +346,186 @@ export async function publishListing(input: ListingSubmission): Promise<void> {
     throw new Error(getPublicationErrorMessage(error));
   }
 }
+
+export type AdminListing = {
+  id: string;
+  owner_id: string;
+  make: string;
+  model: string;
+  year: number;
+  price: number;
+  currency: Listing["currency"];
+  km: number | null;
+  fuel: Listing["fuel"];
+  transmission: Listing["transmission"];
+  body: Listing["body"];
+  province: string;
+  style: string;
+  condition: Listing["condition"];
+  doors: number | null;
+  financing: boolean | null;
+  trade: boolean | null;
+  image_url: string;
+  image_urls: string[];
+  plan: ListingPlanId;
+  requested_plan: ListingPlanId;
+  published_at: string | null;
+  status: string;
+  seller: string;
+  phone: string;
+  description: string;
+  details: Record<string, string | string[]>;
+  whatsapp_enabled: boolean;
+  created_at: string;
+  updated_at: string;
+};
+
+export async function fetchAllListingsForAdmin(): Promise<AdminListing[]> {
+  if (!supabase) {
+    return listings.map((l) => ({
+      id: l.id,
+      owner_id: "",
+      make: l.make,
+      model: l.model,
+      year: l.year,
+      price: l.price,
+      currency: l.currency,
+      km: l.km,
+      fuel: l.fuel,
+      transmission: l.transmission,
+      body: l.body,
+      province: l.province,
+      style: l.style,
+      condition: l.condition,
+      doors: l.doors,
+      financing: l.financing,
+      trade: l.trade,
+      image_url: l.image,
+      image_urls: l.images,
+      plan: l.plan,
+      requested_plan: l.plan,
+      published_at: l.publishedAt,
+      status: "published",
+      seller: l.seller,
+      phone: l.phone,
+      description: l.description,
+      details: l.details,
+      whatsapp_enabled: l.whatsappEnabled,
+      created_at: l.publishedAt,
+      updated_at: l.publishedAt,
+    }));
+  }
+
+  const { data, error } = await supabase
+    .from("listings")
+    .select("*")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Could not load listings for admin:", error);
+    throw new Error("No se pudieron cargar los anuncios para revisión.");
+  }
+
+  return (data ?? []).map((row) => ({
+    id: row.id,
+    owner_id: row.owner_id,
+    make: row.make,
+    model: row.model,
+    year: row.year,
+    price: row.price,
+    currency: row.currency,
+    km: row.km,
+    fuel: row.fuel,
+    transmission: row.transmission,
+    body: row.body,
+    province: row.province,
+    style: row.style,
+    condition: row.condition,
+    doors: row.doors,
+    financing: row.financing,
+    trade: row.trade,
+    image_url: row.image_url,
+    image_urls:
+      Array.isArray(row.image_urls) && row.image_urls.length > 0
+        ? row.image_urls
+        : [row.image_url],
+    plan: row.plan,
+    requested_plan: row.requested_plan,
+    published_at: row.published_at,
+    status: row.status,
+    seller: row.seller,
+    phone: row.phone,
+    description: row.description,
+    details: (row.details as Record<string, string | string[]>) ?? {},
+    whatsapp_enabled: row.whatsapp_enabled,
+    created_at: row.created_at,
+    updated_at: row.updated_at,
+  }));
+}
+
+export async function updateListingStatus(
+  listingId: string,
+  status: "pending_review" | "published" | "rejected" | "paused" | "sold",
+): Promise<void> {
+  if (!supabase) {
+    throw new Error("La gestión de anuncios no está configurada.");
+  }
+
+  const updates: Record<string, unknown> = { status };
+
+  if (status === "published") {
+    updates["published_at"] = new Date().toISOString();
+  }
+
+  const { error } = await supabase
+    .from("listings")
+    .update(updates)
+    .eq("id", listingId);
+
+  if (error) {
+    console.error("Could not update listing status:", error);
+    throw new Error("No se pudo actualizar el estado del anuncio.");
+  }
+}
+
+export async function updateListing(
+  listingId: string,
+  updates: Partial<{
+    make: string;
+    model: string;
+    year: number;
+    price: number;
+    currency: "CRC" | "USD";
+    km: number | null;
+    fuel: string;
+    transmission: string;
+    body: string;
+    province: string;
+    style: string;
+    condition: string;
+    doors: number | null;
+    financing: boolean | null;
+    trade: boolean | null;
+    seller: string;
+    phone: string;
+    description: string;
+    details: Record<string, string | string[]>;
+    plan: ListingPlanId;
+    requested_plan: ListingPlanId;
+    whatsapp_enabled: boolean;
+  }>,
+): Promise<void> {
+  if (!supabase) {
+    throw new Error("La gestión de anuncios no está configurada.");
+  }
+
+  const { error } = await supabase
+    .from("listings")
+    .update(updates)
+    .eq("id", listingId);
+
+  if (error) {
+    console.error("Could not update listing:", error);
+    throw new Error("No se pudo actualizar el anuncio.");
+  }
+}

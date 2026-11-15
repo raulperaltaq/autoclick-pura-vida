@@ -23,6 +23,9 @@ import { Route as AutosIndexRouteImport } from './routes/autos.index'
 import { Route as AutosIdRouteImport } from './routes/autos.$id'
 import { Route as AutosAvanzadaRouteImport } from './routes/autos.avanzada'
 import { Route as DashboardAgenciaRouteImport } from './routes/dashboard.agencia'
+import { Route as AdminRouteImport } from './routes/admin/route'
+import { Route as AdminIndexRouteImport } from './routes/admin/index'
+import { Route as AdminAnunciosIdRouteImport } from './routes/admin/anuncios.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -93,6 +96,20 @@ const DashboardAgenciaRoute = DashboardAgenciaRouteImport.update({
   id: '/dashboard/agencia',
   path: '/dashboard/agencia',
   getParentRoute: () => rootRouteImport,
+} as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminIndexRoute = AdminIndexRouteImport.update({
+  id: '/admin/',
+  path: '/admin/',
+  getParentRoute: () => AdminRoute,
+} as any)
+const AdminAnunciosIdRoute = AdminAnunciosIdRouteImport.update({
+  id: '/admin/anuncios/$id',
+  path: '/admin/anuncios/$id',
+  getParentRoute: () => AdminRoute,
 } as any)
 
 export interface FileRoutesByFullPath {
@@ -307,6 +324,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardAgenciaRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin/': {
+      id: '/admin/'
+      path: '/admin/'
+      fullPath: '/admin/'
+      preLoaderRoute: typeof AdminIndexRouteImport
+      parentRoute: typeof AdminRoute
+    }
+    '/admin/anuncios/$id': {
+      id: '/admin/anuncios/$id'
+      path: '/admin/anuncios/$id'
+      fullPath: '/admin/anuncios/$id'
+      preLoaderRoute: typeof AdminAnunciosIdRouteImport
+      parentRoute: typeof AdminRoute
+    }
   }
 }
 
@@ -320,6 +358,19 @@ const AuthenticatedRouteRouteChildren: AuthenticatedRouteRouteChildren = {
 
 const AuthenticatedRouteRouteWithChildren =
   AuthenticatedRouteRoute._addFileChildren(AuthenticatedRouteRouteChildren)
+
+interface AdminRouteChildren {
+  AdminIndexRoute: typeof AdminIndexRoute
+  AdminAnunciosIdRoute: typeof AdminAnunciosIdRoute
+}
+
+const AdminRouteChildren: AdminRouteChildren = {
+  AdminIndexRoute: AdminIndexRoute,
+  AdminAnunciosIdRoute: AdminAnunciosIdRoute,
+}
+
+const AdminRouteWithChildren =
+  AdminRoute._addFileChildren(AdminRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -335,6 +386,7 @@ const rootRouteChildren: RootRouteChildren = {
   AutosAvanzadaRoute: AutosAvanzadaRoute,
   DashboardAgenciaRoute: DashboardAgenciaRoute,
   AutosIndexRoute: AutosIndexRoute,
+  AdminRoute: AdminRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
