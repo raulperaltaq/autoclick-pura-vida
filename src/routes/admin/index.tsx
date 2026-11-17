@@ -1,23 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useCallback, useMemo, useState } from "react";
-import { useQuery } from "@tanstack/react-query";
-import {
-  fetchAllListingsForAdmin,
-  updateListingStatus,
-} from "@/data/listings-repository";
+import { useMemo, useState } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchAllListingsForAdmin } from "@/data/listings-repository";
+import { adminUpdateListingStatus, adminBulkUpdateListingStatus } from "@/lib/admin-functions";
 import { AuthOnly } from "@/components/auth-only";
 import { useAuth } from "@/lib/use-auth";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Checkbox } from "@/components/ui/checkbox";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import {
   Loader2,
   RefreshCw,
   Truck,
-  X,
-  CheckCircle2,
   Eye,
-  Edit3,
+  Check,
+  Edit,
+  X,
+  CheckSquare,
+  Square,
+  Pencil,
 } from "lucide-react";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin/")({
   head: () => ({
@@ -43,22 +54,52 @@ const statusLabels: Record<string, { label: string; variant: string }> = {
 function AdminPage() {
   const { profile } = useAuth();
   const [statusFilter, setStatusFilter] = useState<string>("all");
-  const [isConfirming, setIsConfirming] = useState<string | null>(null);
-  const [confirmAction, setConfirmAction] = useState<{
-    listingId: string;
-    status: string;
-  } | null>(null);
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const queryClient = useQueryClient();
 
   const listingsQuery = useQuery({
     queryKey: ["admin-listings", statusFilter],
     queryFn: fetchAllListingsForAdmin,
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: ({
+      id,
+      status,
+    }: {
+      id: string;
+      status: "pending_review" | "published" | "rejected" | "paused" | "sold";
+    }) => adminUpdateListingStatus({ listingId: id, status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
+      toast.success("Estado actualizado correctamente");
+    },
+    onError: () => {
+      toast.error("No se pudo actualizar el estado");
+    },
+  });
+
+  const bulkUpdateMutation = useMutation({
+    mutationFn: ({
+      ids,
+      status,
+    }: {
+      ids: string[];
+      status: "pending_review" | "published" | "rejected" | "paused" | "sold";
+    }) => adminBulkUpdateListingStatus({ listingIds: ids, status }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-listings"] });
+      setSelectedIds([]);
+      toast.success("Estados actualizados correctamente");
+    },
+    onError: () => {
+      toast.error("No se pudieron actualizar los estados");
+    },
+  });
+
   const listings = useMemo(
     () =>
-      listingsQuery.data?.filter(
-        (l) => statusFilter === "all" || l.status === statusFilter,
-      ) ?? [],
+      listingsQuery.data?.filter((l) => statusFilter === "all" || l.status === statusFilter) ?? [],
     [listingsQuery.data, statusFilter],
   );
 
@@ -74,45 +115,34 @@ function AdminPage() {
     };
   }, [listingsQuery.data]);
 
-  const handleApprove = useCallback(
-    async (listingId: string) => {
-      setConfirmAction({ listingId, status: "published" });
-    },
-    [],
-  );
-
-  const handleReject = useCallback(
-    async (listingId: string) => {
-      setConfirmAction({ listingId, status: "rejected" });
-    },
-    [],
-  );
-
-  const handleConfirm = useCallback(async () => {
-    if (!confirmAction) return;
-    setIsConfirming(confirmAction.listingId);
-    try {
-      await updateListingStatus(
-        confirmAction.listingId,
-        confirmAction.status as
-          | "pending_review"
-          | "published"
-          | "rejected"
-          | "paused"
-          | "sold",
-      );
-      setConfirmAction(null);
-      setIsConfirming(null);
-    } catch (error) {
-      setIsConfirming(null);
-      console.error("Error updating listing:", error);
+  const handleSelectAll = (checked: boolean) => {
+    if (checked) {
+      setSelectedIds(listings.map((l) => l.id));
+    } else {
+      setSelectedIds([]);
     }
-  }, [confirmAction]);
+  };
 
-  const handleCancel = useCallback(() => {
-    setConfirmAction(null);
-    setIsConfirming(null);
-  }, []);
+  const handleSelectOne = (id: string, checked: boolean) => {
+    setSelectedIds((prev) =>
+      checked ? [...prev, id] : prev.filter((selectedId) => selectedId !== id),
+    );
+  };
+
+  const handleBulkAction = (
+    status: "pending_review" | "published" | "rejected" | "paused" | "sold",
+  ) => {
+    if (selectedIds.length > 0) {
+      bulkUpdateMutation.mutate({ ids: selectedIds, status });
+    }
+  };
+
+  const handleIndividualAction = (
+    id: string,
+    status: "pending_review" | "published" | "rejected" | "paused" | "sold",
+  ) => {
+    updateStatusMutation.mutate({ id, status });
+  };
 
   return (
     <AuthOnly allowedRoles={["admin"]}>
@@ -134,6 +164,50 @@ function AdminPage() {
             </p>
           </div>
           <div className="flex items-center gap-2">
+            {selectedIds.length > 0 && (
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline" className="flex items-center gap-2">
+                    <CheckSquare className="h-4 w-4" />
+                    Acciones en lote ({selectedIds.length})
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end">
+                  <DropdownMenuLabel>
+                    Cambiar estado de {selectedIds.length} anuncios
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    onClick={() => handleBulkAction("published")}
+                    disabled={bulkUpdateMutation.isPending}
+                    className="flex items-center gap-2 text-green-600"
+                  >
+                    <Check className="h-4 w-4" /> Aprobar (Publicar)
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleBulkAction("rejected")}
+                    disabled={bulkUpdateMutation.isPending}
+                    className="flex items-center gap-2 text-red-600"
+                  >
+                    <X className="h-4 w-4" /> Rechazar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleBulkAction("paused")}
+                    disabled={bulkUpdateMutation.isPending}
+                    className="flex items-center gap-2 text-yellow-600"
+                  >
+                    Pausar
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    onClick={() => handleBulkAction("pending_review")}
+                    disabled={bulkUpdateMutation.isPending}
+                    className="flex items-center gap-2 text-blue-600"
+                  >
+                    Mover a pendientes
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
             <Button
               onClick={() => void listingsQuery.refetch()}
               disabled={listingsQuery.isPending}
@@ -159,13 +233,20 @@ function AdminPage() {
           ].map((stat) => {
             const isActive = statusFilter === stat.id;
             return (
-              <a key={stat.id} onClick={() => setStatusFilter(stat.id)}
-                className={`rounded-xl border p-4 flex flex-col gap-2 transition ${isActive
-                  ? "border-primary bg-primary/5 text-primary"
-                  : "border-border bg-card hover:bg-muted hover:text-primary"}`}>
+              <a
+                key={stat.id}
+                onClick={() => setStatusFilter(stat.id)}
+                className={`rounded-xl border p-4 flex flex-col gap-2 transition ${
+                  isActive
+                    ? "border-primary bg-primary/5 text-primary"
+                    : "border-border bg-card hover:bg-muted hover:text-primary"
+                }`}
+              >
                 <div className="flex items-center justify-between">
                   <span className="text-sm font-semibold">{stat.label}</span>
-                  <span className={`text-xs font-bold ${isActive ? "" : "opacity-50"}`}>{stat.count}</span>
+                  <span className={`text-xs font-bold ${isActive ? "" : "opacity-50"}`}>
+                    {stat.count}
+                  </span>
                 </div>
               </a>
             );
@@ -187,10 +268,15 @@ function AdminPage() {
                   { id: "paused", label: "Pausados" },
                   { id: "sold", label: "Vendidos" },
                 ].map((s) => (
-                  <button key={s.id} onClick={() => setStatusFilter(s.id)}
-                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${statusFilter === s.id
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border bg-background hover:bg-muted"}`}>
+                  <button
+                    key={s.id}
+                    onClick={() => setStatusFilter(s.id)}
+                    className={`rounded-full border px-3 py-1 text-xs font-medium transition ${
+                      statusFilter === s.id
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border bg-background hover:bg-muted"
+                    }`}
+                  >
                     {s.label}
                   </button>
                 ))}
@@ -201,9 +287,7 @@ function AdminPage() {
           {listingsQuery.isError ? (
             <div className="py-20 text-center">
               <div className="rounded-xl border border-destructive/30 bg-destructive/5 p-6 text-center">
-                <p className="text-sm font-semibold text-destructive">
-                  Error al cargar anuncios
-                </p>
+                <p className="text-sm font-semibold text-destructive">Error al cargar anuncios</p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {listingsQuery.error instanceof Error
                     ? listingsQuery.error.message
@@ -221,43 +305,72 @@ function AdminPage() {
           ) : listingsQuery.isPending ? (
             <div className="py-20 text-center">
               <Loader2 className="mx-auto h-8 w-8 animate-spin text-muted-foreground" />
-              <p className="mt-3 text-sm text-muted-foreground">
-                Cargando anuncios…
-              </p>
+              <p className="mt-3 text-sm text-muted-foreground">Cargando anuncios…</p>
             </div>
           ) : listings.length === 0 ? (
             <div className="py-20 text-center">
               <Truck className="mx-auto h-10 w-10 text-muted-foreground" />
-              <h2 className="mt-4 text-xl font-bold">
-                No hay anuncios con este estado
-              </h2>
+              <h2 className="mt-4 text-xl font-bold">No hay anuncios con este estado</h2>
               <p className="mt-2 text-sm text-muted-foreground">
                 Cambiá el filtro a "Todos" o revisá más tarde.
               </p>
             </div>
           ) : (
             <div className="divide-y divide-border">
+              <div className="p-4 flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:justify-start bg-muted/30 border-b border-border">
+                <div className="flex items-center gap-4 sm:min-w-[45%]">
+                  <Checkbox
+                    checked={selectedIds.length === listings.length && listings.length > 0}
+                    onCheckedChange={handleSelectAll}
+                    aria-label="Seleccionar todos"
+                  />
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Anuncio
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 sm:flex-col sm:items-start sm:w-auto">
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Estado
+                  </span>
+                  <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                    Acciones
+                  </span>
+                </div>
+              </div>
               {listings.map((listing) => {
                 const status = statusLabels[listing.status] ?? {
                   label: listing.status,
                   variant: "secondary",
                 };
+                const isSelected = selectedIds.includes(listing.id);
                 return (
-                  <div key={listing.id}
-                    className="p-4 flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:justify-start hover:bg-muted/50 transition">
+                  <div
+                    key={listing.id}
+                    className={`p-4 flex flex-wrap items-center justify-between gap-3 sm:flex-nowrap sm:justify-start hover:bg-muted/50 transition ${isSelected ? "bg-primary/5" : ""}`}
+                  >
                     <div className="flex items-center gap-4 sm:min-w-[45%]">
+                      <Checkbox
+                        checked={isSelected}
+                        onCheckedChange={(checked) => handleSelectOne(listing.id, checked)}
+                        aria-label={`Seleccionar ${listing.make} ${listing.model}`}
+                      />
                       {listing.image_url ? (
-                        <img src={listing.image_url}
+                        <img
+                          src={listing.image_url}
                           alt={`${listing.make} ${listing.model}`}
-                          className="aspect-[4/3] w-20 h-20 rounded-xl object-cover sm:w-24 sm:h-24" />
+                          className="aspect-[4/3] w-20 h-20 rounded-xl object-cover sm:w-24 sm:h-24"
+                        />
                       ) : (
                         <div className="flex aspect-[4/3] w-20 h-20 items-center justify-center rounded-xl bg-muted sm:w-24 sm:h-24">
                           <Truck className="h-8 w-8 text-muted-foreground" />
                         </div>
                       )}
                       <div>
-                        <Link to={"/admin/anuncios/$id" as any} params={{ id: listing.id }}
-                          className="font-semibold text-foreground hover:text-primary">
+                        <Link
+                          to="/admin/anuncios/$id"
+                          params={{ id: listing.id }}
+                          className="font-semibold text-foreground hover:text-primary"
+                        >
                           {listing.make} {listing.model} {listing.year}
                         </Link>
                         <p className="mt-1 text-xs text-muted-foreground truncate sm:max-w-xs">
@@ -274,52 +387,55 @@ function AdminPage() {
                     </div>
 
                     <div className="flex items-center gap-3 sm:flex-col sm:items-start sm:w-auto">
-                      <Badge variant={status.variant as any}>
-                        {status.label}
-                      </Badge>
+                      <Badge variant={status.variant}>{status.label}</Badge>
                       <div className="flex items-center gap-2">
-                        <Link
-                          to="/admin/anuncios/$id"
-                          params={{ id: String(listing.id) }}
-                          className="text-xs font-semibold text-primary hover:underline">
-                          <Eye className="h-3 w-3 mr-1" /> Ver
-                        </Link>
-                        {confirmAction?.listingId === listing.id ? (
-                          <>
-                            <button onClick={() => handleConfirm()}
-                              disabled={isConfirming === listing.id}
-                              className={`text-xs font-bold px-2 py-1 rounded transition ${isConfirming === listing.id
-                                ? "opacity-50 cursor-not-allowed"
-                                : listing.status === "published"
-                                  ? "text-success hover:bg-success/10"
-                                  : "text-destructive hover:bg-destructive/10"
-                              }`}>
-                              {isConfirming === listing.id ? "Procesando…"
-                                : listing.status === "published" ? "Confirmar Aprobar" : "Confirmar Rechazar"}
-                            </button>
-                            <button onClick={handleCancel}
-                              className="text-xs font-bold text-muted-foreground px-2 py-1 rounded hover:bg-muted">
-                              Cancelar
-                            </button>
-                          </>
-                        ) : (
-                          <>
-                            <button onClick={() => handleApprove(listing.id)}
-                              className="text-xs font-bold text-success px-2 py-1 rounded hover:bg-success/10">
-                              <CheckCircle2 className="h-3 w-3 mr-1" /> Aprobar
-                            </button>
-                            <button onClick={() => handleReject(listing.id)}
-                              className="text-xs font-bold text-destructive px-2 py-1 rounded hover:bg-destructive/10">
-                              <X className="h-3 w-3 mr-1" /> Rechazar
-                            </button>
-                          </>
-                        )}
-                        <Link
-                          to="/admin/anuncios/$id"
-                          params={{ id: String(listing.id) }}
-                          className="text-xs font-semibold text-primary hover:underline">
-                          <Edit3 className="h-3 w-3 mr-1" /> Editar
-                        </Link>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-8 w-8">
+                              <Square className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Acciones</DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild className="flex items-center gap-2">
+                              <Link
+                                to="/admin/anuncios/$id/edit"
+                                params={{ id: String(listing.id) }}
+                              >
+                                <Pencil className="h-4 w-4" /> Editar
+                              </Link>
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              onClick={() => handleIndividualAction(listing.id, "published")}
+                              disabled={updateStatusMutation.isPending}
+                              className="flex items-center gap-2 text-green-600"
+                            >
+                              <Check className="h-4 w-4" /> Aprobar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleIndividualAction(listing.id, "rejected")}
+                              disabled={updateStatusMutation.isPending}
+                              className="flex items-center gap-2 text-red-600"
+                            >
+                              <X className="h-4 w-4" /> Rechazar
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => handleIndividualAction(listing.id, "paused")}
+                              disabled={updateStatusMutation.isPending}
+                              className="flex items-center gap-2 text-yellow-600"
+                            >
+                              Pausar
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem asChild className="flex items-center gap-2">
+                              <Link to="/admin/anuncios/$id" params={{ id: String(listing.id) }}>
+                                <Eye className="h-4 w-4" /> Ver detalle
+                              </Link>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </div>
                   </div>

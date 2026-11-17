@@ -17,8 +17,8 @@ describe("role-based account routing", () => {
     expect(getAccountHomeRoute(role)).toBe("/mis-vehiculos");
   });
 
-  it("keeps admin accounts on the account page until an admin dashboard exists", () => {
-    expect(getAccountHomeRoute("admin")).toBe("/mi-cuenta");
+  it("sends admin accounts to the admin panel", () => {
+    expect(getAccountHomeRoute("admin")).toBe("/admin");
   });
 
   it("enforces access rules against the active account role", () => {

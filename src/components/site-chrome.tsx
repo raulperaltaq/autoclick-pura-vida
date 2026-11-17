@@ -54,7 +54,7 @@ export function SiteHeader() {
                   {profile?.role === "agency"
                     ? "Panel Agencia"
                     : profile?.role === "admin"
-                      ? "Mi cuenta"
+                      ? "Panel de Administración"
                       : "Mis vehículos"}
                 </Link>
                 <button

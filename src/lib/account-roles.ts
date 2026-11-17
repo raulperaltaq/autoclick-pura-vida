@@ -22,9 +22,9 @@ export function hasAllowedRole(
 
 export function getAccountHomeRoute(
   role: AccountRole,
-): "/dashboard/agencia" | "/mis-vehiculos" | "/mi-cuenta" {
+): "/dashboard/agencia" | "/admin" | "/mis-vehiculos" {
   if (role === "agency") return "/dashboard/agencia";
-  if (role === "admin") return "/mi-cuenta";
+  if (role === "admin") return "/admin";
   return "/mis-vehiculos";
 }
 

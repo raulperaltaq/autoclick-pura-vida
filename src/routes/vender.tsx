@@ -14,7 +14,7 @@ import {
   tagPrice,
 } from "@/data/monetization";
 import type { AddOnId, ListingPlanId } from "@/data/monetization";
-import { styles } from "@/data/search-options";
+import { brands, styles } from "@/data/search-options";
 import { useAuth } from "@/lib/use-auth";
 import { isSupabaseConfigured } from "@/lib/supabase";
 import { setListingReviewDraft } from "@/lib/listing-review-draft";
@@ -288,6 +288,12 @@ function Vender() {
     setPhotoError(error);
     fileInput.current?.setCustomValidity(error);
   }, [photos.length, photoLimit]);
+
+  useEffect(() => {
+    if (!isAuthLoading && user && profile?.role === "admin") {
+      navigate({ to: "/admin" });
+    }
+  }, [user, profile, isAuthLoading, navigate]);
 
   const updatePhotos = (files: FileList | File[]) => {
     const selected = Array.from(files);
@@ -715,7 +721,7 @@ function Vender() {
         >
           Verificando sesión…
         </p>
-      ) : activeAudience === "individual" && (!user || profile?.role !== "agency") ? (
+      ) : activeAudience === "individual" && (!user || (profile?.role !== "agency" && profile?.role !== "admin")) ? (
         <form onSubmit={handleReview} className="space-y-6">
           <p role="status" className="rounded-xl bg-muted p-4 text-sm text-muted-foreground">
             La publicación requiere una cuenta y aprobación; recibirás confirmación antes de que el
@@ -830,15 +836,13 @@ function Vender() {
             description="Los datos principales que verá quien busque tu vehículo."
           >
             <div className="grid gap-4 sm:grid-cols-2">
-              <Field label="Marca" required>
-                <input
-                  required
-                  name="make"
-                  autoComplete="off"
-                  placeholder="Ej. Toyota"
-                  className={field}
-                />
-              </Field>
+              <SelectField
+                label="Marca"
+                name="make"
+                options={brands}
+                placeholder="Seleccioná una marca"
+                required
+              />
               <Field label="Modelo" required>
                 <input
                   required
