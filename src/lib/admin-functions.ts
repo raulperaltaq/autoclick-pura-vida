@@ -1,6 +1,7 @@
 "use server";
 
 import { supabaseAdmin } from "@/integrations/supabase/client.server";
+import type { TablesUpdate } from "@/integrations/supabase/types";
 import { z } from "zod";
 
 const updateStatusSchema = z.object({
@@ -31,10 +32,10 @@ export async function adminUpdateListingStatus(input: {
   checkAdminConfig();
   const { listingId, status } = updateStatusSchema.parse(input);
 
-  const updates: Record<string, unknown> = { status };
+  const updates: TablesUpdate<"listings"> = { status };
 
   if (status === "published") {
-    updates["published_at"] = new Date().toISOString();
+    updates.published_at = new Date().toISOString();
   }
 
   const { error } = await supabaseAdmin.from("listings").update(updates).eq("id", listingId);
@@ -54,10 +55,10 @@ export async function adminBulkUpdateListingStatus(input: {
   checkAdminConfig();
   const { listingIds, status } = bulkUpdateSchema.parse(input);
 
-  const updates: Record<string, unknown> = { status };
+  const updates: TablesUpdate<"listings"> = { status };
 
   if (status === "published") {
-    updates["published_at"] = new Date().toISOString();
+    updates.published_at = new Date().toISOString();
   }
 
   const { error } = await supabaseAdmin.from("listings").update(updates).in("id", listingIds);

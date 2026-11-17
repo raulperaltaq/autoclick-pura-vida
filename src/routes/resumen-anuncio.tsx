@@ -66,13 +66,13 @@ function ListingReviewPage() {
   const mainPhotoIndex = Math.min(listing.mainPhotoIndex, photoUrls.length - 1);
   const selectedTagNames = selectedTags
     .map((id) => paidTags.find((tag) => tag.id === id)?.name)
-    .filter((name): name is string => Boolean(name));
+    .filter((name): name is NonNullable<typeof name> => Boolean(name));
   const selectedPackNames = selectedPacks
     .map((id) => tagPacks.find((pack) => pack.id === id)?.name)
-    .filter((name): name is string => Boolean(name));
+    .filter((name): name is NonNullable<typeof name> => Boolean(name));
   const selectedServiceNames = selectedServices
     .map((id) => addOnServices.find((service) => service.id === id)?.name)
-    .filter((name): name is string => Boolean(name));
+    .filter((name): name is NonNullable<typeof name> => Boolean(name));
 
   const submit = async () => {
     if (!user) {

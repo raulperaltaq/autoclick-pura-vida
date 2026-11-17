@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { AuthContext } from "@/lib/auth-context";
 import type { AccountProfile } from "@/lib/auth-context";
-import { isSchemaMismatch } from "@/lib/account-schema";
 import { isAccountRole, normalizeAccountRole } from "@/lib/account-roles";
 import { isSupabaseConfigured, supabase } from "@/lib/supabase";
 
@@ -25,68 +24,34 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    if (!supabase) {
-      setProfileError("La autenticación no está configurada.");
-      setIsLoading(false);
-      return;
-    }
-
     setIsLoading(true);
     try {
-      const profileResult = await supabase
-        .from("users")
-        .select("id, email, full_name, phone, role, agency_id")
-        .eq("id", currentUser.id)
-        .maybeSingle();
-
-      const profileData = profileResult.data;
-      const profileErrorData = profileResult.error;
-
-      const fallbackProfileResult =
-        profileData || !profileErrorData || !isSchemaMismatch(profileErrorData)
-          ? null
-          : await supabase.from("profiles").select("id, full_name, phone").eq("id", currentUser.id).maybeSingle();
-
-      const effectiveProfile = profileData ?? fallbackProfileResult?.data ?? null;
-      const effectiveProfileError = effectiveProfile ? null : profileErrorData ?? fallbackProfileResult?.error ?? null;
-
-      const roleResult = await supabase.from("user_roles").select("role").eq("user_id", currentUser.id);
-      const roleRows = roleResult.data ?? [];
-      const roleError = roleResult.error;
-
-      const fallbackRoleResult =
-        roleRows.length > 0 || !roleError || !isSchemaMismatch(roleError)
-          ? null
-          : await supabase.from("users").select("role").eq("id", currentUser.id).maybeSingle();
-
-      const effectiveRoleRows = roleRows.length > 0 ? roleRows : fallbackRoleResult?.data ? [{ role: fallbackRoleResult.data.role }] : [];
-      const effectiveRoleError = effectiveRoleRows.length > 0 ? null : roleError ?? fallbackRoleResult?.error ?? null;
-
-      const agencyResult = await supabase
-        .from("agency_members")
-        .select("agency_id")
-        .eq("user_id", currentUser.id)
-        .limit(1)
-        .maybeSingle();
-      const agencyRows = agencyResult.data;
-      const agencyError = agencyResult.error;
-
-      const fallbackAgencyResult =
-        agencyRows || !agencyError || !isSchemaMismatch(agencyError)
-          ? null
-          : await supabase.from("users").select("agency_id").eq("id", currentUser.id).maybeSingle();
-
-      const effectiveAgency = agencyRows ?? fallbackAgencyResult?.data ?? null;
-      const effectiveAgencyError = effectiveAgency ? null : agencyError ?? fallbackAgencyResult?.error ?? null;
+      const [profileResult, roleResult, agencyResult] = await Promise.all([
+        supabase
+          .from("profiles")
+          .select("id, full_name, phone")
+          .eq("id", currentUser.id)
+          .maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", currentUser.id),
+        supabase
+          .from("agency_members")
+          .select("agency_id")
+          .eq("user_id", currentUser.id)
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
       if (requestId !== profileRequest.current) return;
 
-      if (effectiveProfileError || effectiveRoleError || effectiveAgencyError) {
-        throw effectiveProfileError ?? effectiveRoleError ?? effectiveAgencyError;
-      }
+      const firstError = profileResult.error ?? roleResult.error ?? agencyResult.error;
+      if (firstError) throw firstError;
+
+      const profileData = profileResult.data;
+      const roleRows = roleResult.data ?? [];
+      const agencyData = agencyResult.data;
 
       const normalizedRole = normalizeAccountRole(
-        effectiveRoleRows[0]?.role ?? effectiveProfile?.role ?? currentUser.user_metadata?.requested_role ?? "seller",
+        roleRows[0]?.role ?? currentUser.user_metadata?.["requested_role"] ?? "seller",
       );
       if (!normalizedRole || !isAccountRole(normalizedRole)) {
         setProfile(null);
@@ -94,15 +59,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       } else {
         setProfile({
           id: currentUser.id,
-          email: effectiveProfile?.email ?? currentUser.email ?? null,
+          email: currentUser.email ?? null,
           fullName:
-            effectiveProfile?.full_name ??
-            effectiveProfile?.fullName ??
-            currentUser.user_metadata?.full_name ??
+            profileData?.full_name ??
+            (currentUser.user_metadata?.["full_name"] as string | undefined) ??
             null,
-          phone: effectiveProfile?.phone ?? null,
+          phone: profileData?.phone ?? null,
           role: normalizedRole,
-          agencyId: effectiveAgency?.agency_id ?? effectiveProfile?.agency_id ?? null,
+          agencyId: agencyData?.agency_id ?? null,
         });
         setProfileError(null);
       }
@@ -117,11 +81,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
-    if (!supabase) {
-      setIsLoading(false);
-      return;
-    }
-
     let active = true;
     const { data: authListener } = supabase.auth.onAuthStateChange((_event, session) => {
       const currentUser = session?.user ?? null;
@@ -159,7 +118,6 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, [loadProfile]);
 
   const signOut = useCallback(async () => {
-    if (!supabase) throw new Error("La autenticación todavía no está configurada.");
     const { error } = await supabase.auth.signOut();
     if (error) throw error;
   }, []);

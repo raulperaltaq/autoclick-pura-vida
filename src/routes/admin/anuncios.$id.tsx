@@ -44,7 +44,7 @@ import { provinces } from "@/data/listings";
 type LoaderData = { listing: AdminListing };
 
 export const Route = createFileRoute("/admin/anuncios/$id")({
-  head: ({ loaderData }: { loaderData: LoaderData }) => {
+  head: ({ loaderData }: { loaderData: LoaderData | undefined }) => {
     const l = loaderData?.listing;
     return {
       meta: [
@@ -96,6 +96,7 @@ function ViewListingPage() {
     plan: listing.plan,
     requested_plan: listing.requested_plan,
     whatsapp_enabled: listing.whatsapp_enabled,
+    published_at: listing.published_at,
   });
   const [error, setError] = useState("");
 
@@ -377,9 +378,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.currency}
                       onValueChange={(v) => handleChange("currency", v)}
-                      className="w-32"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-32">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -437,9 +437,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.fuel}
                       onValueChange={(v) => handleChange("fuel", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
@@ -460,9 +459,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.transmission}
                       onValueChange={(v) => handleChange("transmission", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
@@ -483,9 +481,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.body}
                       onValueChange={(v) => handleChange("body", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
@@ -505,9 +502,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.province}
                       onValueChange={(v) => handleChange("province", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
@@ -528,9 +524,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.condition}
                       onValueChange={(v) => handleChange("condition", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
@@ -551,9 +546,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.plan}
                       onValueChange={(v) => handleChange("plan", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
@@ -623,9 +617,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.financing}
                       onValueChange={(v) => handleChange("financing", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
@@ -647,9 +640,8 @@ function ViewListingPage() {
                     <Select
                       value={formData.trade}
                       onValueChange={(v) => handleChange("trade", v)}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
@@ -671,9 +663,8 @@ function ViewListingPage() {
                     <Select
                       value={String(formData.whatsapp_enabled)}
                       onValueChange={(v) => handleChange("whatsapp_enabled", v === "true")}
-                      className="w-full"
                     >
-                      <SelectTrigger>
+                      <SelectTrigger className="w-full">
                         <SelectValue placeholder="Seleccioná" />
                       </SelectTrigger>
                       <SelectContent>
