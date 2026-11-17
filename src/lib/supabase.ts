@@ -1,20 +1,8 @@
-import { createClient } from "@supabase/supabase-js";
+// Single Supabase client for the whole app: re-export the generated, typed
+// Lovable Cloud client so every module shares one session (storage is brokered
+// for the preview). Do not create a second createClient instance here.
+import { supabase } from "@/integrations/supabase/client";
 
-const supabaseUrl = import.meta.env["VITE_SUPABASE_URL"]?.trim();
-const supabaseKey = (
-  import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"] ?? import.meta.env["VITE_SUPABASE_ANON_KEY"]
-)?.trim();
+export { supabase };
 
-export const isSupabaseConfigured = Boolean(supabaseUrl && supabaseKey);
-
-export const supabase =
-  supabaseUrl && supabaseKey
-    ? createClient(supabaseUrl, supabaseKey, {
-        auth: {
-          autoRefreshToken: true,
-          detectSessionInUrl: true,
-          flowType: "pkce",
-          persistSession: true,
-        },
-      })
-    : null;
+export const isSupabaseConfigured = true;
