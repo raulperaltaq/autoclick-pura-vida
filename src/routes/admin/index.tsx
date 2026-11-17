@@ -43,12 +43,15 @@ export const Route = createFileRoute("/admin/")({
   component: AdminPage,
 });
 
-const statusLabels: Record<string, { label: string; variant: string }> = {
-  pending_review: { label: "Pendiente", variant: "warning" },
-  published: { label: "Publicado", variant: "success" },
+const statusLabels: Record<
+  string,
+  { label: string; variant: "default" | "secondary" | "destructive" | "outline" }
+> = {
+  pending_review: { label: "Pendiente", variant: "outline" },
+  published: { label: "Publicado", variant: "default" },
   rejected: { label: "Rechazado", variant: "destructive" },
   paused: { label: "Pausado", variant: "secondary" },
-  sold: { label: "Vendido", variant: "primary" },
+  sold: { label: "Vendido", variant: "secondary" },
 };
 
 function AdminPage() {
@@ -351,7 +354,7 @@ function AdminPage() {
                     <div className="flex items-center gap-4 sm:min-w-[45%]">
                       <Checkbox
                         checked={isSelected}
-                        onCheckedChange={(checked) => handleSelectOne(listing.id, checked)}
+                        onCheckedChange={(checked) => handleSelectOne(listing.id, checked === true)}
                         aria-label={`Seleccionar ${listing.make} ${listing.model}`}
                       />
                       {listing.image_url ? (
@@ -400,7 +403,7 @@ function AdminPage() {
                             <DropdownMenuSeparator />
                             <DropdownMenuItem asChild className="flex items-center gap-2">
                               <Link
-                                to="/admin/anuncios/$id/edit"
+                                to="/admin/anuncios/$id"
                                 params={{ id: String(listing.id) }}
                               >
                                 <Pencil className="h-4 w-4" /> Editar
