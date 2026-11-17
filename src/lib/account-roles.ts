@@ -28,7 +28,7 @@ export function getAccountHomeRoute(
   return "/mis-vehiculos";
 }
 
-export function getLoginRoleForAccess(allowedRoles?: readonly AccountRole[]): AccountRole {
+export function getLoginRoleForAccess(allowedRoles?: readonly AccountRole[]): "seller" | "agency" {
   if (allowedRoles?.includes("agency")) return "agency";
   return "seller";
 }

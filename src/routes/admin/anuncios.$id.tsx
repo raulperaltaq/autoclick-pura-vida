@@ -44,7 +44,13 @@ import { provinces } from "@/data/listings";
 type LoaderData = { listing: AdminListing };
 
 export const Route = createFileRoute("/admin/anuncios/$id")({
-  head: ({ loaderData }: { loaderData: LoaderData | undefined }) => {
+  loader: async ({ params }) => {
+    const listings = await fetchAllListingsForAdmin();
+    const listing = listings.find((l) => l.id === params.id);
+    if (!listing) throw notFound();
+    return { listing };
+  },
+  head: ({ loaderData }) => {
     const l = loaderData?.listing;
     return {
       meta: [
@@ -59,12 +65,6 @@ export const Route = createFileRoute("/admin/anuncios/$id")({
         },
       ],
     };
-  },
-  loader: async ({ params }) => {
-    const listings = await fetchAllListingsForAdmin();
-    const listing = listings.find((l) => l.id === params.id);
-    if (!listing) throw notFound();
-    return { listing };
   },
   component: ViewListingPage,
 });
@@ -284,6 +284,7 @@ function ViewListingPage() {
                         plan: listing.plan,
                         requested_plan: listing.requested_plan,
                         whatsapp_enabled: listing.whatsapp_enabled,
+                        published_at: listing.published_at,
                       });
                       setError("");
                       setIsEditing(true);

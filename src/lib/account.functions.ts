@@ -1,61 +1,27 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { isSchemaMismatch } from "@/lib/account-schema";
 
 export const getAccount = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    const profileResult = await context.supabase.from("users").select("*").eq("id", context.userId).maybeSingle();
-    const fallbackProfileResult =
-      profileResult.data || !profileResult.error || !isSchemaMismatch(profileResult.error)
-        ? null
-        : await context.supabase.from("profiles").select("*").eq("id", context.userId).maybeSingle();
+    const [profileResult, rolesResult, membershipsResult] = await Promise.all([
+      context.supabase.from("profiles").select("*").eq("id", context.userId).maybeSingle(),
+      context.supabase.from("user_roles").select("role").eq("user_id", context.userId),
+      context.supabase
+        .from("agency_members")
+        .select("agency_id, member_role, agencies(*)")
+        .eq("user_id", context.userId),
+    ]);
 
-    const rolesResult = await context.supabase.from("user_roles").select("role").eq("user_id", context.userId);
-    const fallbackRoleResult =
-      rolesResult.data?.length || !rolesResult.error || !isSchemaMismatch(rolesResult.error)
-        ? null
-        : await context.supabase.from("users").select("role").eq("id", context.userId).maybeSingle();
+    const firstError = profileResult.error ?? rolesResult.error ?? membershipsResult.error;
+    if (firstError) throw firstError;
 
-    const membershipsResult = await context.supabase
-      .from("agency_members")
-      .select("agency_id, member_role, agencies(*)")
-      .eq("user_id", context.userId);
-    const fallbackMembershipsResult =
-      membershipsResult.data?.length || !membershipsResult.error || !isSchemaMismatch(membershipsResult.error)
-        ? null
-        : await context.supabase.from("users").select("agency_id").eq("id", context.userId).maybeSingle();
-
-    const profile = profileResult.data ?? fallbackProfileResult?.data ?? null;
+    const profile = profileResult.data;
     if (!profile) throw new Error("No se pudo cargar tu perfil.");
-
-    const roles =
-      rolesResult.data && rolesResult.data.length > 0
-        ? rolesResult.data
-        : fallbackRoleResult?.data
-          ? [{ role: fallbackRoleResult.data.role }]
-          : [];
-    const memberships =
-      membershipsResult.data && membershipsResult.data.length > 0
-        ? membershipsResult.data
-        : fallbackMembershipsResult?.data
-          ? [{ agency_id: fallbackMembershipsResult.data.agency_id ?? null, member_role: "member", agencies: null }]
-          : [];
-
-    if (rolesResult.error && !fallbackRoleResult && !(rolesResult.data && rolesResult.data.length > 0)) {
-      throw new Error("No se pudieron verificar tus permisos.");
-    }
-    if (
-      membershipsResult.error &&
-      !fallbackMembershipsResult &&
-      !(membershipsResult.data && membershipsResult.data.length > 0)
-    ) {
-      throw new Error("No se pudieron verificar tus permisos.");
-    }
 
     return {
       profile,
-      roles: roles.map((r) => r.role),
-      memberships,
+      roles: (rolesResult.data ?? []).map((row) => row.role),
+      memberships: membershipsResult.data ?? [],
     };
   });

@@ -301,6 +301,9 @@ export async function publishListing(input: ListingSubmission): Promise<void> {
       imageUrls.push(supabase.storage.from("listing-images").getPublicUrl(path).data.publicUrl);
     }
 
+    const primaryImageUrl = imageUrls[0];
+    if (!primaryImageUrl) throw new Error("No se pudieron procesar las imágenes del anuncio.");
+
     const { error } = await supabase.from("listings").insert({
       id: listingId,
       owner_id: authData.user.id,
@@ -319,7 +322,7 @@ export async function publishListing(input: ListingSubmission): Promise<void> {
       doors: input.doors,
       financing: input.financing,
       trade: input.trade,
-      image_url: imageUrls[0],
+      image_url: primaryImageUrl,
       image_urls: imageUrls,
       seller: input.seller,
       phone: input.phone,
@@ -440,14 +443,14 @@ export async function fetchAllListingsForAdmin(): Promise<AdminListing[]> {
     model: row.model,
     year: row.year,
     price: row.price,
-    currency: row.currency,
+    currency: row.currency as Listing["currency"],
     km: row.km,
-    fuel: row.fuel,
-    transmission: row.transmission,
-    body: row.body,
+    fuel: row.fuel as Listing["fuel"],
+    transmission: row.transmission as Listing["transmission"],
+    body: row.body as Listing["body"],
     province: row.province,
     style: row.style,
-    condition: row.condition,
+    condition: row.condition as Listing["condition"],
     doors: row.doors,
     financing: row.financing,
     trade: row.trade,
@@ -456,8 +459,8 @@ export async function fetchAllListingsForAdmin(): Promise<AdminListing[]> {
       Array.isArray(row.image_urls) && row.image_urls.length > 0
         ? row.image_urls
         : [row.image_url],
-    plan: row.plan,
-    requested_plan: row.requested_plan,
+    plan: row.plan as ListingPlanId,
+    requested_plan: row.requested_plan as ListingPlanId,
     published_at: row.published_at,
     status: row.status,
     seller: row.seller,
@@ -478,10 +481,13 @@ export async function updateListingStatus(
     throw new Error("La gestión de anuncios no está configurada.");
   }
 
-  const updates: Record<string, unknown> = { status };
+  const updates: {
+    status: "pending_review" | "published" | "rejected" | "paused" | "sold";
+    published_at?: string;
+  } = { status };
 
   if (status === "published") {
-    updates["published_at"] = new Date().toISOString();
+    updates.published_at = new Date().toISOString();
   }
 
   const { error } = await supabase

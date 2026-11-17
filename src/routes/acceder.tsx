@@ -80,8 +80,16 @@ function AccessPage() {
     setOauthProvisioning(true);
     void (async () => {
       try {
-        const { error } = await supabase.rpc("complete_signup", { requested_role: accountType });
-        if (error) throw error;
+        if (accountType === "agency") {
+          const oauthFullName = user.user_metadata?.["full_name"];
+          const agencyName =
+            fullName.trim() ||
+            (typeof oauthFullName === "string" ? oauthFullName.trim() : "") ||
+            user.email ||
+            "Mi agencia";
+          const { error } = await supabase.rpc("create_my_agency", { agency_name: agencyName });
+          if (error) throw error;
+        }
         await refreshProfile();
         if (active) setOauthProvisionedUser(user.id);
       } catch (error) {
