@@ -44,7 +44,7 @@ import { provinces } from "@/data/listings";
 type LoaderData = { listing: AdminListing };
 
 export const Route = createFileRoute("/admin/anuncios/$id")({
-  head: ({ loaderData }: { loaderData: LoaderData }) => {
+  head: ({ loaderData }: { loaderData: LoaderData | undefined }) => {
     const l = loaderData?.listing;
     return {
       meta: [
@@ -96,6 +96,7 @@ function ViewListingPage() {
     plan: listing.plan,
     requested_plan: listing.requested_plan,
     whatsapp_enabled: listing.whatsapp_enabled,
+    published_at: listing.published_at,
   });
   const [error, setError] = useState("");
 
